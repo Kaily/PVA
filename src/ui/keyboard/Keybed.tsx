@@ -23,6 +23,10 @@ export function setKeyPick(fn: PickFn | null): void {
  * Pointer handling is done on the keybed as a whole with geometric
  * hit-testing: every pointer (finger) is tracked separately, which gives
  * true multi-touch chords and glissando across keys with the button held.
+ *
+ * Each key carries `data-midi` and an empty `.key__mark`; the Academy's
+ * KeyHighlighter colours keys and writes finger numbers into the mark
+ * imperatively, the same way key travel is shown.
  */
 export const Keybed = memo(function Keybed() {
   const labels = useStore(services().store, (s) => s.noteLabels);
@@ -143,8 +147,9 @@ export const Keybed = memo(function Keybed() {
     >
       <div className="keybed__whites">
         {WHITE_KEYS.map((k) => (
-          <div key={k.midi} ref={setRef(k.index)} className="key key--white" data-note={noteName(k.midi)}>
+          <div key={k.midi} ref={setRef(k.index)} className="key key--white" data-note={noteName(k.midi)} data-midi={k.midi}>
             {labels !== 'off' && <span className="key__label">{keyLabel(k.midi, labels)}</span>}
+            <span className="key__mark" aria-hidden="true" />
           </div>
         ))}
       </div>
@@ -154,9 +159,11 @@ export const Keybed = memo(function Keybed() {
           ref={setRef(k.index)}
           className="key key--black"
           data-note={noteName(k.midi)}
+          data-midi={k.midi}
           style={{ left: `${k.left * 100}%`, width: `${k.width * 100}%` }}
         >
           {labels !== 'off' && <span className="key__label">{keyLabel(k.midi, labels)}</span>}
+          <span className="key__mark" aria-hidden="true" />
         </div>
       ))}
       <div className="keybed__overhang" aria-hidden="true" />

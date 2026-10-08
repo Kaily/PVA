@@ -364,6 +364,16 @@ Every performance event already passes through one place,
 will tap that stream with clock timestamps, and playback will call the same
 `VoiceManager` / `SustainManager` methods on per-track parts.
 
+## 13. Piano Academy
+
+`src/academy/` — a teaching mode built on the engines above, described in
+`ACADEMY.md`. It plays lesson notes through `controller.playNote()` (the
+arpeggiator's programmed-note path) on the `Clock` tick grid, clicks through
+`metronome.clickAt()`, reads every input from the controller's `key` event
+(which carries the input `source`), colours keys of the keybed by class
+toggles (`KeyHighlighter`), and stores progress through `StorageManager`
+under `pva61.academy`. Its panel replaces the control panel while open.
+
 ## Extending
 
 - **A new tone:** see `docs/INSTRUMENTS.md`, "Adding tones".

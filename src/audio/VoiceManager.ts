@@ -398,11 +398,16 @@ export class VoiceManager {
 
   /**
    * Release one specific voice at a given time, ignoring the pedals.
-   * Used by the arpeggiator, whose notes have a programmed length.
+   * Used by the arpeggiator and the Academy playback, whose notes have a
+   * programmed length. Calling it again with an earlier time moves the
+   * release forward (a paused playback cuts its notes, including ones that
+   * have not started yet); a later time never postpones it.
    */
   releaseVoice(voice: Voice, when: number): void {
-    if (voice.state === 'releasing' || voice.state === 'dying') return;
-    this.release(voice, Math.max(when, this.ctx.currentTime));
+    if (voice.state === 'dying') return;
+    const t = Math.max(when, this.ctx.currentTime);
+    if (voice.state === 'releasing' && voice.releaseTime <= t) return;
+    this.release(voice, t);
   }
 
   /** Sustain pedal lifted: everything it was holding enters its natural release. */

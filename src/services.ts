@@ -1,3 +1,4 @@
+import { LessonEngine } from './academy/LessonEngine';
 import { AudioEngine } from './audio/AudioEngine';
 import { Clock } from './audio/Clock';
 import { EffectsEngine } from './audio/EffectsEngine';
@@ -41,6 +42,8 @@ export interface Services {
   midi: MidiManager;
   controller: KeyboardController;
   tapTempo: TapTempo;
+  /** Piano Academy lesson engine (idle until the Academy is opened). */
+  academy: LessonEngine;
   /** The three keyboard parts: Upper 1, Upper 2 (layer) and Lower (split). */
   parts: Record<PartId, Part>;
   /** Shortcut for parts.upper1. */
@@ -98,6 +101,7 @@ export function createServices(): Services {
   const metronome = new Metronome(ctx, clock, mixer.metronomeBus);
   const midi = new MidiManager();
   const controller = new KeyboardController(engine, voices, sustain, instruments, parts, clock, midi);
+  const academy = new LessonEngine({ engine, clock, metronome, controller, midi, storage });
 
   instance = {
     store,
@@ -114,6 +118,7 @@ export function createServices(): Services {
     midi,
     controller,
     tapTempo: new TapTempo(),
+    academy,
     parts,
     upper: parts.upper1,
   };

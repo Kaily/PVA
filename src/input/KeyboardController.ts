@@ -5,7 +5,7 @@ import type { Clock } from '../audio/Clock';
 import type { InstrumentManager } from '../audio/InstrumentManager';
 import type { Part } from '../audio/MixerEngine';
 import type { SustainManager, PedalKind } from '../audio/SustainManager';
-import type { VoiceManager } from '../audio/VoiceManager';
+import type { Voice, VoiceManager } from '../audio/VoiceManager';
 import type { ArpSettings } from '../data/arpPatterns';
 import { toneById } from '../data/tones';
 import { Arpeggiator } from '../music/Arpeggiator';
@@ -37,8 +37,8 @@ import { applyTouch, type TouchMode } from './velocity';
  */
 
 export type ControllerEvents = {
-  /** Visual key state (physical key number). */
-  key: { key: number; down: boolean; velocity: number };
+  /** Visual key state (physical key number). `source` is the input that pressed or last released the key. */
+  key: { key: number; down: boolean; velocity: number; source: string };
   /** Velocity of the latest strike after touch response (for the meter). */
   velocity: number;
   /** Pitch bend position −1…+1 (for the wheel). */
@@ -241,14 +241,35 @@ export class KeyboardController {
   }
 
   private playArpNote(key: number, velocity: number, when: number, until: number): void {
-    if (!this.enabled) return;
+    this.playNote(key, velocity, when, until);
+  }
+
+  /**
+   * Play a programmed note of a given length on the upper part(s), exactly as
+   * the key would sound (tone, layer, octave, transpose), without touching the
+   * key state or emitting key events. Used by the arpeggiator and by the
+   * Academy's lesson playback. Returns the voices so they can be cut early.
+   */
+  playNote(key: number, velocity: number, when: number, until: number): Voice[] {
+    const started: Voice[] = [];
+    if (!this.enabled) return started;
     for (const id of this.targets('upper')) {
       const p = this.parts[id];
       const inst = this.instruments.get(p.toneId);
       if (!inst) continue;
       const voice = this.voices.noteOn(p.part, inst, this.noteFor(id, key), velocity, { when });
-      if (voice) this.voices.releaseVoice(voice, until);
+      if (voice) {
+        this.voices.releaseVoice(voice, until);
+        started.push(voice);
+      }
     }
+    return started;
+  }
+
+  /** Let programmed notes go now (pause / stop of a playback). */
+  cutNotes(voices: Voice[]): void {
+    const now = this.engine.ctx.currentTime;
+    for (const v of voices) this.voices.releaseVoice(v, now);
   }
 
   /* ---------------------------------------------------------------- */
@@ -271,7 +292,7 @@ export class KeyboardController {
 
     let v = applyTouch(velocity, this.touchMode, this.fixedVelocity);
     v = this.sustain.applySoft('upper1', v);
-    this.events.emit('key', { key, down: true, velocity: v });
+    this.events.emit('key', { key, down: true, velocity: v, source });
 
     if (!this.enabled) return;
     if (!this.engine.isRunning) {
@@ -318,7 +339,7 @@ export class KeyboardController {
     if (!holders || !holders.delete(source)) return;
     if (holders.size > 0) return; // another source still holds the key
     this.held.delete(key);
-    this.events.emit('key', { key, down: false, velocity: 0 });
+    this.events.emit('key', { key, down: false, velocity: 0, source });
 
     if (this.arpKeys.delete(key)) this.arp.keyUp(key);
     this.stopKey(key);
@@ -437,7 +458,7 @@ export class KeyboardController {
   /** ALL NOTES OFF: silence everything, lift every pedal, centre the controllers. */
   panic(): void {
     for (const key of [...this.held.keys()]) {
-      this.events.emit('key', { key, down: false, velocity: 0 });
+      this.events.emit('key', { key, down: false, velocity: 0, source: 'panic' });
     }
     this.held.clear();
     this.sounding.clear();

@@ -59,6 +59,15 @@ export class Metronome {
     return this.beats > 0 ? (((index - this.barStart) % this.beats) + this.beats) % this.beats : -1;
   }
 
+  /**
+   * One click at an audio-clock time, independent of the metronome's on/off
+   * state — the Academy uses it for its count-in and practice clicks so the
+   * panel metronome setting is left alone.
+   */
+  clickAt(time: number, accent: boolean): void {
+    this.click(accent ? this.sound.accent : this.sound.beat, time);
+  }
+
   private onBeat(beat: Beat): void {
     if (!this.on) return;
     if (this.barStart < 0) this.barStart = beat.index;

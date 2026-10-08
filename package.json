@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "test:e2e": "node tests/e2e/run.mjs",
+    "test:academy": "node tests/e2e/academy.mjs",
     "fetch:soundfont": "node scripts/fetch-soundfont.mjs",
     "tones": "node scripts/build-tone-table.mjs"
   },

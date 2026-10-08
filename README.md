@@ -94,6 +94,19 @@ with *N/A*; selecting one says why instead of playing something else.
 
 Everything is also reachable from **FUNCTION**.
 
+## Piano Academy
+
+The **ACADEMY** button (graduation cap, on the right speaker) turns the panel
+into a piano teacher; the keybed below stays the instrument's own. This build
+has one complete lesson — **Happy Birthday to You**, absolute beginner, right
+hand — in four modes: Watch & Listen, Step-by-Step, Guided Practice (with
+count-in and metronome) and Independent Performance. Green key = play now,
+blue = coming next, red = wrong key, gold = phrase complete. Practice results
+are kept in the browser.
+
+Instructions in simple Hindi: `docs/ACADEMY-GUIDE-HI.md`. Design, tests and
+what comes next: `docs/ACADEMY.md`.
+
 ## What is in the build
 
 **Sound**
@@ -149,8 +162,9 @@ for the full 15–25 seconds of a real grand.
 | `npm run dev` | Development server with hot reload |
 | `npm run build` | Type-check and build to `dist/` |
 | `npm run preview` | Serve the built app |
-| `npm test` | 73 unit tests: chords, key layout, velocity, the SoundFont parser, the instrument models (pitch), arpeggiator, harmonizer, tone table … |
+| `npm test` | 92 unit tests: the Academy's song, validation and progress rules, chords, key layout, velocity, the SoundFont parser, the instrument models (pitch), arpeggiator, harmonizer, tone table … |
 | `npm run test:e2e` | 49 checks in a real browser — needs Chrome installed and a build. See `docs/PHASES.md` for what they cover. |
+| `npm run test:academy` | 12 checks of the Piano Academy demo lesson in a real browser (same requirements) |
 | `npm run fetch:soundfont` | Download the tone library again if `public/soundfonts/GeneralUser-GS.sf2` is missing (checksum verified) |
 | `npm run tones` | Regenerate the preset table from the SoundFont file |
 

@@ -1,0 +1,68 @@
+{
+  "id": "happy-birthday",
+  "title": "Happy Birthday to You",
+  "difficulty": "Absolute Beginner",
+  "difficultyHi": "बिल्कुल शुरुआत",
+  "keySignature": "C Major",
+  "hand": "right",
+  "practice": "Right Hand, Single Notes",
+  "timeSignature": { "beats": 3, "unit": 4 },
+  "pickupBeats": 1,
+  "tempo": { "default": 60, "min": 30, "max": 120 },
+  "intro": "यह गाना 3/4 time में है — हर bar में 3 beat (गिनती: 1-2-3)। गाना तीसरी गिनती से शुरू होता है: पहले दो छोटे notes \"Hap-py\" एक ही beat में आते हैं — पहला थोड़ा लंबा, दूसरा बहुत छोटा।",
+  "phrases": [
+    {
+      "title": "Phrase 1",
+      "lyric": "Happy birthday to you",
+      "tip": "दाहिने हाथ का अँगूठा (1) G4 पर रखें। बाकी उँगलियाँ अपने-आप अगली keys पर: 2 → A4, 3 → B4, 4 → C5, 5 → D5।",
+      "notes": [
+        { "note": "G4", "beats": 0.75, "finger": 1, "lyric": "Hap-" },
+        { "note": "G4", "beats": 0.25, "finger": 1, "lyric": "py" },
+        { "note": "A4", "beats": 1, "finger": 2, "lyric": "birth-" },
+        { "note": "G4", "beats": 1, "finger": 1, "lyric": "day" },
+        { "note": "C5", "beats": 1, "finger": 4, "lyric": "to" },
+        { "note": "B4", "beats": 2, "finger": 3, "lyric": "you" }
+      ]
+    },
+    {
+      "title": "Phrase 2",
+      "lyric": "Happy birthday to you",
+      "tip": "हाथ वहीं रहे — अँगूठा G4 पर। इस बार ऊपर का note D5 है, छोटी उँगली (5) से।",
+      "notes": [
+        { "note": "G4", "beats": 0.75, "finger": 1, "lyric": "Hap-" },
+        { "note": "G4", "beats": 0.25, "finger": 1, "lyric": "py" },
+        { "note": "A4", "beats": 1, "finger": 2, "lyric": "birth-" },
+        { "note": "G4", "beats": 1, "finger": 1, "lyric": "day" },
+        { "note": "D5", "beats": 1, "finger": 5, "lyric": "to" },
+        { "note": "C5", "beats": 2, "finger": 4, "lyric": "you" }
+      ]
+    },
+    {
+      "title": "Phrase 3",
+      "lyric": "Happy birthday dear (name)",
+      "tip": "इस phrase में हाथ दो बार खिसकता है। G4-G4 के बाद हाथ ऊपर ले जाएँ (अँगूठा C5 पर, छोटी उँगली G5 पर); फिर B4 से पहले हाथ नीचे (अँगूठा A4 पर)। \"Na-me\" की जगह जिसका जन्मदिन है उसका नाम गाएँ।",
+      "notes": [
+        { "note": "G4", "beats": 0.75, "finger": 1, "lyric": "Hap-" },
+        { "note": "G4", "beats": 0.25, "finger": 1, "lyric": "py" },
+        { "note": "G5", "beats": 1, "finger": 5, "lyric": "birth-", "shift": "हाथ ऊपर ले जाएँ: अँगूठा (1) C5 पर, छोटी उँगली (5) G5 पर।" },
+        { "note": "E5", "beats": 1, "finger": 3, "lyric": "day" },
+        { "note": "C5", "beats": 1, "finger": 1, "lyric": "dear" },
+        { "note": "B4", "beats": 1, "finger": 2, "lyric": "Na-", "shift": "हाथ थोड़ा नीचे लाएँ: अँगूठा (1) A4 पर, उँगली 2 B4 पर।" },
+        { "note": "A4", "beats": 1, "finger": 1, "lyric": "me" }
+      ]
+    },
+    {
+      "title": "Phrase 4",
+      "lyric": "Happy birthday to you",
+      "tip": "हाथ फिर ऊपर: अँगूठा (1) C5 पर। F5 उँगली 4 से, E5 उँगली 3 से। आख़िरी C5 पूरे तीन beat तक दबाए रखें।",
+      "notes": [
+        { "note": "F5", "beats": 0.75, "finger": 4, "lyric": "Hap-", "shift": "हाथ फिर ऊपर ले जाएँ: अँगूठा (1) C5 पर, उँगली 4 F5 पर।" },
+        { "note": "F5", "beats": 0.25, "finger": 4, "lyric": "py" },
+        { "note": "E5", "beats": 1, "finger": 3, "lyric": "birth-" },
+        { "note": "C5", "beats": 1, "finger": 1, "lyric": "day" },
+        { "note": "D5", "beats": 1, "finger": 2, "lyric": "to" },
+        { "note": "C5", "beats": 3, "finger": 1, "lyric": "you" }
+      ]
+    }
+  ]
+}

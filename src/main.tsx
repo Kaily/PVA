@@ -12,6 +12,7 @@ import './styles/controls.css';
 import './styles/keyboard.css';
 import './styles/lcd.css';
 import './styles/help.css';
+import './styles/academy.css';
 import { App } from './App';
 import { createServices, services } from './services';
 import * as actions from './state/actions';

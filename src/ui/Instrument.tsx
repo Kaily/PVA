@@ -1,4 +1,10 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faGraduationCap } from '@fortawesome/free-solid-svg-icons';
+import { closeAcademy, openAcademy } from '../academy/actions';
+import { AcademyPanel } from '../academy/ui/AcademyPanel';
+import { useStore } from '../core/store';
 import { services } from '../services';
+import { PanelButton } from './controls/PanelButton';
 import { Wheel } from './controls/Wheel';
 import { useApp } from './hooks';
 import { Keybed } from './keyboard/Keybed';
@@ -10,7 +16,8 @@ export function Instrument() {
   const power = useApp((s) => s.power);
   const bendRange = useApp((s) => s.bendRange);
 
-  const { controller } = services();
+  const { controller, academy } = services();
+  const academyOpen = useStore(academy.store, (s) => s.open);
 
   return (
     <div className={`chassis${power ? '' : ' chassis--off'}`}>
@@ -25,18 +32,35 @@ export function Instrument() {
           <div className="speaker__grille" aria-hidden="true" />
         </div>
 
-        <div className="panel">
-          <MasterSection />
-          <ToneSection />
-          <DisplaySection />
-          <PerformSection />
-          <ControlColumn />
-        </div>
+        {academyOpen ? (
+          <AcademyPanel />
+        ) : (
+          <div className="panel">
+            <MasterSection />
+            <ToneSection />
+            <DisplaySection />
+            <PerformSection />
+            <ControlColumn />
+          </div>
+        )}
 
         <div className="speaker speaker--right">
           <div className="brand brand--right">
             <span className="brand__line">61 keys</span>
             <span className="brand__line brand__line--dim">64-voice polyphony</span>
+          </div>
+          <div className="academy-switch">
+            <PanelButton
+              label="Academy"
+              ariaLabel={academyOpen ? 'Close the Piano Academy' : 'Open the Piano Academy'}
+              cap={<FontAwesomeIcon icon={faGraduationCap} />}
+              led={power && academyOpen}
+              ledColor="green"
+              latched={academyOpen}
+              disabled={!power}
+              onPress={() => (academyOpen ? closeAcademy() : openAcademy())}
+            />
+            <span className="academy-switch__hint">सीखें</span>
           </div>
           <div className="speaker__grille" aria-hidden="true" />
         </div>
