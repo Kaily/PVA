@@ -1,0 +1,296 @@
+/* ------------------------------------------------------------------
+   Keybed — 61 keys with physical key travel
+
+   A key is drawn the way it looks from the player's seat: the top surface,
+   and below it the thin front face ("lip"). Pressing a key does three things,
+   exactly as on a real keybed:
+
+     1. the key tips down about its back edge (a small rotateX with its own
+        perspective), so the front gets marginally narrower and neighbours'
+        side walls appear as dark slivers;
+     2. the front lip sinks behind the key slip, so less of it is visible;
+     3. the surface loses light: neighbours shade it and the highlight moves.
+
+   The attack is ~30 ms, the release a softer ~120 ms. Only the `is-down`
+   class is toggled from script; everything else is CSS.
+   ------------------------------------------------------------------ */
+
+.keybed {
+  --lip: 0.66rem;
+  --travel-in: 30ms;
+  --travel-out: 125ms;
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;
+  cursor: default;
+  background: #060606;
+  border-radius: 0 0 0.15rem 0.15rem;
+  box-shadow:
+    0 0 0 0.09rem #050505,
+    0.12rem 0 0 0.09rem rgba(255, 255, 255, 0.04);
+}
+
+.keybed__whites {
+  display: flex;
+  height: 100%;
+}
+
+.key {
+  transform-origin: 50% 0;
+  transition: transform var(--travel-out) cubic-bezier(0.22, 0.72, 0.3, 1);
+}
+
+.key.is-down {
+  transition-duration: var(--travel-in);
+  transition-timing-function: cubic-bezier(0.3, 0, 0.6, 1);
+}
+
+/* ---- white keys --------------------------------------------------- */
+
+.key--white {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0 0.045rem;
+  border-radius: 0 0 0.24rem 0.24rem;
+  /* warm ivory, never flat white: faint lengthwise grain + rounded long edges */
+  background:
+    linear-gradient(90deg, rgba(60, 45, 20, 0.16) 0%, rgba(60, 45, 20, 0) 6%, rgba(255, 255, 255, 0) 60%, rgba(60, 45, 20, 0.05) 93%, rgba(60, 45, 20, 0.2) 100%),
+    repeating-linear-gradient(90deg, rgba(120, 100, 60, 0.022) 0 0.07rem, rgba(255, 255, 255, 0) 0.07rem 0.31rem),
+    linear-gradient(180deg, #e6e1d5 0%, #f2eee4 10%, #f6f3ea 62%, #f1ede3 86%, #ebe6da 100%);
+  box-shadow:
+    inset 0 0 0 0.03rem rgba(90, 75, 45, 0.25),
+    inset 0.07rem 0 0 rgba(255, 255, 255, 0.75);
+}
+
+/* front lip */
+.key--white::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--lip);
+  border-radius: 0 0 0.24rem 0.24rem;
+  background: linear-gradient(180deg, #fdfcf8 0%, #d6cfc0 18%, #c2bbaa 55%, #a39c8b 100%);
+  box-shadow: inset 0 -0.07rem 0 rgba(0, 0, 0, 0.3);
+  transition:
+    height var(--travel-out) cubic-bezier(0.22, 0.72, 0.3, 1),
+    filter var(--travel-out) ease-out;
+}
+
+/* shading that appears when the key is down */
+.key--white::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    linear-gradient(90deg, rgba(20, 12, 0, 0.42) 0%, rgba(20, 12, 0, 0) 16%, rgba(20, 12, 0, 0) 84%, rgba(20, 12, 0, 0.42) 100%),
+    linear-gradient(180deg, rgba(40, 28, 8, 0) 0%, rgba(40, 28, 8, 0.08) 45%, rgba(40, 28, 8, 0.24) 100%);
+  transition: opacity var(--travel-out) ease-out;
+}
+
+.key--white.is-down {
+  transform: perspective(52rem) rotateX(-1.9deg) scaleY(1.0135);
+}
+
+.key--white.is-down::after {
+  height: 0.18rem;
+  /* what is left of the lip sits in the shadow of the neighbouring keys */
+  filter: brightness(0.62);
+  transition-duration: var(--travel-in);
+}
+
+.key--white.is-down::before {
+  opacity: 1;
+  transition-duration: var(--travel-in);
+}
+
+/* ---- black keys --------------------------------------------------- */
+
+.key--black {
+  position: absolute;
+  z-index: 2;
+  /* starts above the visible bed so its travel never opens a gap at the back */
+  top: -0.5rem;
+  height: calc(var(--black-len) + 0.5rem);
+  border-radius: 0 0 0.2rem 0.2rem;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.02) 11%, rgba(255, 255, 255, 0) 80%, rgba(0, 0, 0, 0.5) 100%),
+    linear-gradient(180deg, #1c1c1e 0%, #19191b 55%, #141415 100%);
+  box-shadow:
+    0 0 0 0.05rem #000,
+    0.1rem 0.55rem 0.45rem rgba(0, 0, 0, 0.55),
+    0.05rem 0.2rem 0.12rem rgba(0, 0, 0, 0.6);
+  transition:
+    transform var(--travel-out) cubic-bezier(0.22, 0.72, 0.3, 1),
+    box-shadow var(--travel-out) ease-out;
+}
+
+/* soft reflection along the bevelled top */
+.key--black::before {
+  content: '';
+  position: absolute;
+  left: 14%;
+  right: 46%;
+  top: 6%;
+  bottom: 16%;
+  border-radius: 0.2rem;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.1) 45%, rgba(255, 255, 255, 0.03) 100%);
+  transition: opacity var(--travel-out) ease-out;
+}
+
+/* sloped front face */
+.key--black::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1.35rem;
+  border-radius: 0 0 0.2rem 0.2rem;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 16%, rgba(0, 0, 0, 0) 80%, rgba(0, 0, 0, 0.4) 100%),
+    linear-gradient(180deg, #4b4b50 0%, #303034 14%, #1c1c1e 60%, #0c0c0d 100%);
+  box-shadow: inset 0 0.05rem 0 rgba(255, 255, 255, 0.28);
+  transition: height var(--travel-out) cubic-bezier(0.22, 0.72, 0.3, 1);
+}
+
+.key--black.is-down {
+  transform: translateY(0.24rem);
+  box-shadow:
+    0 0 0 0.05rem #000,
+    0.05rem 0.22rem 0.2rem rgba(0, 0, 0, 0.6),
+    0.02rem 0.08rem 0.06rem rgba(0, 0, 0, 0.6);
+  transition-duration: var(--travel-in);
+}
+
+.key--black.is-down::after {
+  height: 0.62rem;
+  transition-duration: var(--travel-in);
+}
+
+.key--black.is-down::before {
+  opacity: 0.45;
+  transition-duration: var(--travel-in);
+}
+
+/* ---- shadow of the panel edge falling on the back of the keys ---------- */
+
+.keybed__overhang {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1.9rem;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.3) 30%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* ---- optional note labels ------------------------------------------------ */
+
+.key__label {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--lip) + 0.45rem);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-align: center;
+  color: #7b7466;
+  pointer-events: none;
+}
+
+.key--black .key__label {
+  bottom: 1.75rem;
+  font-size: 0.5rem;
+  letter-spacing: 0;
+  color: #b9b6ae;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .keybed {
+    --travel-in: 1ms;
+    --travel-out: 1ms;
+  }
+}
+
+/* ---- split point ----------------------------------------------------
+   Drawn on the felt strip directly above the keys. */
+
+.splitzone {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -0.5rem;
+  height: 0.5rem;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.splitzone__lower {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  overflow: hidden;
+  background: linear-gradient(180deg, #2d8ea0, #1c6a7a);
+  box-shadow: inset 0 0.06rem 0.1rem rgba(0, 0, 0, 0.45);
+}
+
+.splitzone__lower span {
+  position: absolute;
+  left: 0.5rem;
+  top: 0;
+  font-size: 0.44rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  line-height: 0.5rem;
+  text-transform: uppercase;
+  color: rgba(4, 22, 28, 0.85);
+}
+
+.splitzone__flag {
+  position: absolute;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  min-width: 2.3rem;
+  height: 1.2rem;
+  padding: 0 0.35rem;
+  transform: translateX(-50%);
+  border-radius: 0.18rem 0.18rem 0 0;
+  font-size: 0.68rem;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: #1a1206;
+  background: linear-gradient(180deg, #ffc566, var(--led-amber));
+  box-shadow:
+    0 0 0 0.06rem rgba(0, 0, 0, 0.6),
+    0 0.2rem 0.4rem rgba(0, 0, 0, 0.5);
+  cursor: ew-resize;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+/* the line that marks the exact key boundary */
+.splitzone__flag::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 0.12rem;
+  height: 0.7rem;
+  margin-left: -0.06rem;
+  background: var(--led-amber);
+  box-shadow: 0 0 0.3rem rgba(255, 178, 62, 0.8);
+}

@@ -1,0 +1,547 @@
+/* ------------------------------------------------------------------
+   Chassis — the instrument body, speaker grilles and panel sections
+   ------------------------------------------------------------------ */
+
+.chassis {
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.1' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+  position: relative;
+  width: 120rem;
+  border-radius: 1.1rem 1.1rem 0.7rem 0.7rem;
+  /* moulded graphite: fine texture over a top-lit gradient */
+  background:
+    var(--noise),
+    linear-gradient(180deg, #33363a 0%, var(--case) 9%, #232527 58%, var(--case-lo) 100%);
+  background-size: 10rem 10rem, auto;
+  background-blend-mode: soft-light, normal;
+  box-shadow:
+    inset 0 0.08rem 0 rgba(255, 255, 255, 0.16),
+    inset 0 -0.1rem 0 rgba(0, 0, 0, 0.6),
+    inset 0.08rem 0 0 rgba(255, 255, 255, 0.05),
+    inset -0.08rem 0 0 rgba(0, 0, 0, 0.35),
+    0 0.3rem 0.4rem rgba(0, 0, 0, 0.55),
+    0 2.2rem 3.2rem -0.6rem rgba(0, 0, 0, 0.75),
+    0 4.5rem 6rem -1.5rem rgba(0, 0, 0, 0.55);
+}
+
+/* ---- top: speaker | panel | speaker -------------------------------- */
+
+.chassis__top {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr) 8.5rem;
+  gap: 1rem;
+  height: 31rem;
+  padding: 1.2rem 1.3rem 1.1rem;
+}
+
+.speaker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.speaker__grille {
+  flex: 1;
+  border-radius: 0.7rem;
+  /* perforated steel: two offset dot grids */
+  background:
+    radial-gradient(circle at 50% 50%, #050505 0 0.13rem, rgba(0, 0, 0, 0) 0.16rem) 0 0 / 0.54rem 0.54rem,
+    radial-gradient(circle at 50% 50%, #050505 0 0.13rem, rgba(0, 0, 0, 0) 0.16rem) 0.27rem 0.27rem / 0.54rem 0.54rem,
+    linear-gradient(160deg, #2c2e31 0%, #1b1c1e 60%, #151617 100%);
+  box-shadow:
+    inset 0 0.25rem 0.5rem rgba(0, 0, 0, 0.75),
+    inset 0 -0.06rem 0 rgba(255, 255, 255, 0.07),
+    0 0.06rem 0 rgba(255, 255, 255, 0.06);
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  height: 3.4rem;
+  justify-content: center;
+  padding-left: 0.2rem;
+}
+
+.brand--right {
+  align-items: flex-end;
+  padding: 0 0.2rem 0 0;
+}
+
+.brand__mark {
+  font-family: var(--font-lcd);
+  font-weight: 700;
+  font-size: 2.15rem;
+  line-height: 0.9;
+  letter-spacing: 0.06em;
+  color: #e3e5e7;
+  text-shadow: 0 0.06rem 0 rgba(0, 0, 0, 0.8);
+}
+
+.brand__mark b {
+  margin-left: 0.28em;
+  font-weight: 500;
+  color: var(--led-amber);
+}
+
+.brand__line {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.brand__line--dim {
+  color: #71777e;
+}
+
+/* ---- panel ----------------------------------------------------------- */
+
+.panel {
+  display: grid;
+  grid-template-columns: 12rem 20rem minmax(0, 1fr) 10.4rem 15rem;
+  min-width: 0;
+  border-radius: 0.5rem;
+  /* a slightly smoother inlay than the textured casing */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.1));
+  box-shadow:
+    inset 0 0 0 0.06rem rgba(0, 0, 0, 0.55),
+    inset 0 0.12rem 0 rgba(255, 255, 255, 0.05),
+    0 0.06rem 0 rgba(255, 255, 255, 0.07);
+}
+
+.sec {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0.75rem 0.7rem 0.8rem;
+}
+
+/* engraved divider between sections */
+.panel > * + *::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.9rem;
+  bottom: 0.9rem;
+  width: 0.12rem;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.6) 50%, rgba(255, 255, 255, 0.08) 50%);
+}
+
+.sec__title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.sec__title::after {
+  content: '';
+  flex: 1;
+  height: 0.06rem;
+  background: rgba(214, 217, 220, 0.22);
+}
+
+.sec__body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* ---- MASTER ------------------------------------------------------------ */
+
+.master {
+  flex: 1;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: space-between;
+}
+
+.master__left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+/* ---- TONE ---------------------------------------------------------------- */
+
+.tone {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.1rem 0 0.2rem;
+}
+
+.tone__row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.3rem;
+  justify-items: center;
+  align-items: end;
+}
+
+.tone__row--tools {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0.15rem;
+}
+
+/* the category matrix sits in a printed frame */
+.tone__cats {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.62rem 0.3rem;
+  justify-items: center;
+  padding: 1.05rem 0 0.75rem;
+  border-top: 0.06rem solid rgba(214, 217, 220, 0.22);
+  border-bottom: 0.06rem solid rgba(214, 217, 220, 0.22);
+}
+
+.tone__cats::before {
+  content: 'Category';
+  position: absolute;
+  left: 50%;
+  top: -0.42rem;
+  padding: 0 0.5rem;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  line-height: 0.8rem;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  background: #26282b;
+}
+
+/* ---- PERFORM section ------------------------------------------------------ */
+
+.perform {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 0.6rem;
+  justify-items: center;
+  align-content: space-between;
+  padding: 0.1rem 0 0.2rem;
+}
+
+/* LED ladder: one lamp per option */
+.ladder,
+.pedals {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.ladder li,
+.pedals li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: 1;
+}
+
+.ladder i,
+.pedals i,
+.beatleds i,
+.midilamp__led {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--led-off);
+  box-shadow:
+    inset 0 0.05rem 0.1rem rgba(0, 0, 0, 0.8),
+    0 0.05rem 0 rgba(255, 255, 255, 0.08);
+}
+
+.ladder .is-on,
+.pedals .is-on {
+  color: var(--ink);
+}
+
+.ladder .is-on i,
+.pedals .is-on i {
+  background: var(--led-amber);
+  box-shadow:
+    0 0 0.5rem rgba(255, 178, 62, 0.75),
+    inset 0 -0.05rem 0.1rem rgba(120, 60, 0, 0.6);
+}
+
+.pedals {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  gap: 1.1rem;
+  padding-top: 0.2rem;
+}
+
+/* ---- DISPLAY ----------------------------------------------------------------- */
+
+.sec--display {
+  justify-content: center;
+  padding: 0.9rem 0.5rem;
+}
+
+.display {
+  display: flex;
+  gap: 1.2rem;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.display__left {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.display__keys {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.display__spacer {
+  flex: 1;
+}
+
+.display__right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+}
+
+.display__legend {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.display__value {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ---- right-hand column: TEMPO / PITCH over SYSTEM ---------------------------------- */
+
+.sec-stack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.sec-stack > .sec--tempo {
+  flex: 1;
+}
+
+.sec-stack > .sec--system {
+  padding-top: 0.2rem;
+}
+
+/* ---- TEMPO / PITCH --------------------------------------------------------------- */
+
+.tempo {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem 0.6rem;
+  align-content: space-evenly;
+  align-items: end;
+  justify-items: center;
+}
+
+.tempo__metro {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-end;
+  gap: 1.6rem;
+}
+
+.pair {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pair__legend {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.pair__buttons {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.beatleds {
+  display: flex;
+  gap: 0.55rem;
+  padding-bottom: 0.9rem;
+}
+
+.beatleds i {
+  width: 0.62rem;
+  height: 0.62rem;
+}
+
+.beatleds i.is-on {
+  background: var(--led-green);
+  box-shadow: 0 0 0.6rem rgba(63, 224, 143, 0.8);
+}
+
+.beatleds i.beatleds__accent.is-on {
+  background: var(--led-red);
+  box-shadow: 0 0 0.6rem rgba(255, 67, 54, 0.85);
+}
+
+/* ---- SYSTEM ---------------------------------------------------------------------------- */
+
+.system {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.8rem 0.3rem;
+  justify-items: center;
+  align-items: end;
+  align-content: start;
+}
+
+.system .midilamp {
+  grid-column: 1 / -1;
+}
+
+.system .pbtn__cap {
+  width: 2.8rem;
+}
+
+.system .pbtn__legend {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+}
+
+.system .pbtn__text {
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+}
+
+.midilamp {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 1rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.midilamp.is-on {
+  color: var(--ink);
+}
+
+.midilamp.is-on .midilamp__led {
+  background: #1f8f58;
+  box-shadow: 0 0 0.3rem rgba(63, 224, 143, 0.5);
+}
+
+.midilamp .midilamp__led.is-flash {
+  background: var(--led-green);
+  box-shadow: 0 0 0.6rem rgba(63, 224, 143, 0.95);
+}
+
+/* ---- felt, bottom, lip ------------------------------------------------------------------- */
+
+.chassis__felt {
+  height: 0.5rem;
+  margin: 0 3.4rem 0 11.4rem;
+  border-radius: 0.1rem 0.1rem 0 0;
+  background:
+    var(--noise),
+    linear-gradient(180deg, #7a1820, var(--felt) 60%, #4a0d12);
+  background-size: 6rem 6rem, auto;
+  background-blend-mode: overlay, normal;
+  box-shadow: inset 0 0.08rem 0.1rem rgba(0, 0, 0, 0.5);
+}
+
+.chassis__bottom {
+  display: grid;
+  grid-template-columns: 10.5rem minmax(0, 1fr) 2.5rem;
+  height: 17.4rem;
+  padding: 0 0.9rem;
+}
+
+.cheek {
+  position: relative;
+}
+
+.keyzone {
+  position: relative;
+  min-width: 0;
+  height: 100%;
+}
+
+.cheek--left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding-right: 0.6rem;
+}
+
+.cheek__note {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.wheels {
+  display: flex;
+  gap: 1.3rem;
+}
+
+.chassis__lip {
+  height: 1.7rem;
+  border-radius: 0 0 0.7rem 0.7rem;
+  background: linear-gradient(180deg, #303236 0%, #26282b 35%, #17181a 100%);
+  box-shadow:
+    inset 0 0.08rem 0 rgba(255, 255, 255, 0.12),
+    inset 0 -0.12rem 0.2rem rgba(0, 0, 0, 0.5);
+}
+
+/* ---- power off: indicators and legends dim with the instrument ---------------------------- */
+
+.chassis--off .knob__tick.is-lit {
+  stroke: var(--ink-faint);
+}

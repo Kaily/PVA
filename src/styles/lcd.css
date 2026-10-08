@@ -1,0 +1,1089 @@
+/* ------------------------------------------------------------------
+   Display — a 480 × 272 style colour TFT behind a glass bezel
+   ------------------------------------------------------------------ */
+
+.lcd {
+  position: relative;
+  width: 30.5rem;
+  height: 22rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background: #040506;
+  box-shadow:
+    inset 0 0 0 0.07rem #17191b,
+    inset 0 0.2rem 0.5rem rgba(0, 0, 0, 0.9),
+    0 0.07rem 0 rgba(255, 255, 255, 0.1),
+    0 0 0 0.07rem rgba(0, 0, 0, 0.7);
+}
+
+.lcd__screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 0.14rem;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-lcd);
+  font-weight: 500;
+  color: var(--lcd-ink);
+  background: linear-gradient(180deg, var(--lcd-bg-2) 0%, var(--lcd-bg-1) 100%);
+}
+
+.lcd--off .lcd__screen {
+  background: #020304;
+}
+
+/* reflection on the cover glass */
+.lcd__glare {
+  position: absolute;
+  inset: 0.5rem;
+  border-radius: 0.14rem;
+  pointer-events: none;
+  background: linear-gradient(118deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.015) 28%, rgba(255, 255, 255, 0) 29%);
+}
+
+/* firmware-style page change: a quick wipe, not a slide */
+.lcd__page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  animation: lcd-page 110ms steps(4, end);
+}
+
+@keyframes lcd-page {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+/* ---- status bar ----------------------------------------------------- */
+
+.lcd-status {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  height: 1.55rem;
+  padding: 0 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lcd-dim);
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 0.06rem solid var(--lcd-line);
+}
+
+.lcd-status__title {
+  flex: 1;
+  color: var(--lcd-ink);
+  white-space: nowrap;
+}
+
+.lcd-status__midi.is-on {
+  color: #58e6a0;
+}
+
+.lcd-status__voices span {
+  color: var(--lcd-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- main page ---------------------------------------------------------- */
+
+.lcd-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0.5rem 0.6rem 0.45rem;
+  gap: 0.45rem;
+}
+
+.lcd-main__head {
+  flex: 1;
+  display: flex;
+  gap: 0.6rem;
+  min-height: 0;
+}
+
+.lcd-tone {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Upper 1: the big line */
+.lcd-tone__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: 100%;
+  padding: 0.1rem 0 0.25rem 0.5rem;
+  border: 0;
+  border-left: 0.2rem solid transparent;
+  background: transparent;
+  font-family: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lcd-tone__main.is-selected {
+  border-left-color: var(--lcd-hi);
+}
+
+.lcd-tone__cat {
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  line-height: 1;
+  color: var(--lcd-hi);
+}
+
+.lcd-tone__cat b {
+  margin-right: 0.6rem;
+  font-weight: 700;
+  color: var(--lcd-dim);
+}
+
+.lcd-tone__name {
+  font-size: 2.5rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Upper 2 and Lower: one line each */
+.lcd-part {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  height: 1.5rem;
+  padding: 0 0.3rem 0 0.5rem;
+  border: 0;
+  border-left: 0.2rem solid transparent;
+  background: rgba(160, 215, 225, 0.045);
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--lcd-dim);
+  text-align: left;
+  cursor: pointer;
+}
+
+.lcd-part.is-selected {
+  border-left-color: var(--lcd-hi);
+}
+
+.lcd-part__tag {
+  width: 1.3rem;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.lcd-part__num {
+  font-size: 0.86rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.lcd-part__name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lcd-part__state {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.lcd-part.is-on {
+  color: var(--lcd-ink);
+}
+
+.lcd-part.is-on .lcd-part__tag,
+.lcd-part.is-on .lcd-part__state {
+  color: #58e6a0;
+}
+
+.lcd-side {
+  width: 8.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.lcd-flags {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.2rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.lcd-flags span {
+  padding: 0.24rem 0;
+  text-align: center;
+  color: rgba(127, 162, 169, 0.5);
+  border: 0.06rem solid var(--lcd-line);
+}
+
+.lcd-flags .is-on {
+  color: #04121a;
+  background: #58e6a0;
+  border-color: #58e6a0;
+}
+
+.lcd-tone__num {
+  margin-right: 0.55rem;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--lcd-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.lcd-vel {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lcd-dim);
+}
+
+.lcd-vel__track {
+  flex: 1;
+  height: 0.34rem;
+  overflow: hidden;
+  background: rgba(160, 215, 225, 0.12);
+}
+
+.lcd-vel__fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, #58e6a0 0%, #58e6a0 55%, var(--lcd-hi) 80%, #ff6a4d 100%);
+}
+
+.lcd-chord {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.3rem 0.55rem 0.35rem;
+  border: 0.06rem solid var(--lcd-line);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.lcd-chord__label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lcd-dim);
+}
+
+.lcd-chord__name {
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--lcd-hi);
+}
+
+.lcd-chord__name.is-empty {
+  color: rgba(127, 162, 169, 0.45);
+}
+
+/* parameter tiles */
+.lcd-tiles {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.3rem;
+}
+
+.lcd-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  height: 3.05rem;
+  padding: 0.28rem 0.42rem 0.22rem;
+  border: 0.06rem solid var(--lcd-line);
+  border-radius: 0;
+  background: rgba(160, 215, 225, 0.045);
+  font-family: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lcd-tile__label {
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--lcd-dim);
+}
+
+.lcd-tile__value {
+  max-width: 100%;
+  font-size: 1.22rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.lcd-tile__note {
+  width: 0.5rem;
+  height: 1rem;
+  margin-right: 0.22rem;
+  fill: var(--lcd-dim);
+}
+
+.lcd-tile__unit {
+  margin-right: 0.28rem;
+  font-size: 0.95rem;
+  color: var(--lcd-dim);
+}
+
+.lcd-tile.is-selected {
+  border-color: var(--lcd-hi);
+  background: rgba(244, 170, 60, 0.13);
+  box-shadow: inset 0 0 0 0.06rem var(--lcd-hi);
+}
+
+.lcd-tile.is-selected .lcd-tile__label {
+  color: var(--lcd-hi);
+}
+
+.lcd-beats {
+  position: absolute;
+  right: 0.4rem;
+  top: 0.3rem;
+  display: flex;
+  gap: 0.16rem;
+}
+
+.lcd-beats i {
+  width: 0.26rem;
+  height: 0.26rem;
+  border-radius: 50%;
+  background: rgba(160, 215, 225, 0.22);
+}
+
+.lcd-beats i.is-on {
+  background: #58e6a0;
+}
+
+.lcd-beats i.is-accent.is-on {
+  background: #ff6a4d;
+}
+
+/* ---- lists (function menu, MIDI) ------------------------------------------- */
+
+.lcd-menu {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0.25rem 0.6rem 0.3rem;
+  /* rows scroll out under the message line instead of being cut in half */
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 86%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 86%, transparent 100%);
+}
+
+.lcd-menu__title {
+  margin: 0.4rem 0 0.12rem;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lcd-hi);
+}
+
+.lcd-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  height: 1.56rem;
+  padding: 0 0.5rem;
+  border: 0;
+  border-bottom: 0.06rem solid rgba(160, 215, 225, 0.08);
+  background: transparent;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--lcd-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.lcd-row__label {
+  white-space: nowrap;
+}
+
+.lcd-row__value {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--lcd-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.lcd-row.is-selected {
+  background: var(--lcd-hi);
+  color: #1a1206;
+  border-bottom-color: transparent;
+}
+
+.lcd-row.is-selected .lcd-row__value {
+  color: #1a1206;
+}
+
+.lcd-midi {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 0;
+  padding: 0.5rem 0.6rem 0.3rem;
+  font-size: 0.92rem;
+}
+
+.lcd-midi__status {
+  min-height: 1.1rem;
+  line-height: 1.15;
+  color: var(--lcd-dim);
+}
+
+.lcd-midi__status.is-on {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #58e6a0;
+}
+
+.lcd-midi__list {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 0 0.5rem;
+  list-style: none;
+  overflow: hidden;
+}
+
+.lcd-midi__list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 1.3rem;
+  white-space: nowrap;
+}
+
+.lcd-midi__list em {
+  font-style: normal;
+  color: var(--lcd-dim);
+}
+
+.is-dim {
+  color: var(--lcd-dim);
+}
+
+.lcd-dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: rgba(160, 215, 225, 0.2);
+}
+
+.lcd-dot.is-on {
+  background: #58e6a0;
+}
+
+.lcd-midi__monitor {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.18rem 0.5rem;
+  border: 0.06rem solid var(--lcd-line);
+  color: var(--lcd-dim);
+}
+
+.lcd-midi__monitor b {
+  font-weight: 600;
+  color: var(--lcd-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.lcd-midi__map {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.9rem;
+  font-size: 0.72rem;
+  line-height: 1.25;
+  color: var(--lcd-dim);
+}
+
+/* ---- system monitor ------------------------------------------------------- */
+
+.lcd-monitor {
+  flex: 1;
+  margin: 0;
+  padding: 0.45rem 0.7rem 0.2rem;
+  font-size: 0.9rem;
+}
+
+.lcd-monitor > div {
+  display: flex;
+  gap: 0.8rem;
+  height: 1.6rem;
+  align-items: center;
+  border-bottom: 0.06rem solid rgba(160, 215, 225, 0.08);
+}
+
+.lcd-monitor dt {
+  width: 5.2rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lcd-dim);
+}
+
+.lcd-monitor dd {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- message line ------------------------------------------------------------ */
+
+.lcd-msg {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  height: 1.5rem;
+  padding: 0 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--lcd-ink);
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 0.06rem solid var(--lcd-line);
+}
+
+.lcd-msg__text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lcd-msg--warn .lcd-msg__text {
+  color: var(--lcd-hi);
+}
+
+.lcd-msg__load {
+  flex-shrink: 0;
+  color: var(--lcd-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- value pop-up ---------------------------------------------------------------- */
+
+.lcd-popup {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  min-width: 13rem;
+  padding: 0.5rem 1.1rem 0.6rem;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  background: #04121a;
+  border: 0.1rem solid var(--lcd-hi);
+  box-shadow: 0 0 0 0.25rem rgba(4, 18, 26, 0.75);
+  animation: lcd-pop 70ms steps(2, end);
+}
+
+@keyframes lcd-pop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lcd-popup__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--lcd-hi);
+}
+
+.lcd-popup__value {
+  margin-top: 0.12rem;
+  font-size: 2.3rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- boot screen --------------------------------------------------------------------- */
+
+.lcd-boot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.lcd-boot__mark {
+  font-size: 4.4rem;
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: 0.08em;
+}
+
+.lcd-boot__mark span {
+  margin-left: 0.22em;
+  font-weight: 500;
+  color: var(--lcd-hi);
+}
+
+.lcd-boot__sub {
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--lcd-dim);
+}
+
+.lcd-boot__bar {
+  width: 13rem;
+  height: 0.22rem;
+  margin-top: 1.1rem;
+  overflow: hidden;
+  background: rgba(160, 215, 225, 0.14);
+}
+
+.lcd-boot__bar span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 50%;
+  background: var(--lcd-hi);
+  transition: transform 160ms linear;
+}
+
+.lcd-boot__text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--lcd-dim);
+}
+
+/* ---- parameter lists: variants ------------------------------------------------------ */
+
+.lcd-menu--compact {
+  flex: none;
+  padding-top: 0.2rem;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.lcd-row--info {
+  cursor: default;
+  color: var(--lcd-dim);
+}
+
+/* ---- tone browser --------------------------------------------------------------------- */
+
+.lcd-browser {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.lcd-browser__bar {
+  display: flex;
+  align-items: stretch;
+  gap: 0.3rem;
+  height: 1.9rem;
+  padding: 0.3rem 0.5rem 0;
+  border-bottom: 0.06rem solid var(--lcd-line);
+}
+
+.lcd-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0 0.6rem;
+  border: 0.06rem solid var(--lcd-line);
+  border-bottom: 0;
+  background: rgba(160, 215, 225, 0.045);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--lcd-dim);
+  cursor: pointer;
+}
+
+.lcd-tab svg {
+  width: 0.66rem;
+  height: 0.66rem;
+}
+
+.lcd-tab.is-on {
+  color: #1a1206;
+  background: var(--lcd-hi);
+  border-color: var(--lcd-hi);
+}
+
+.lcd-tab--cat {
+  padding: 0;
+  gap: 0;
+}
+
+.lcd-tab--cat button {
+  height: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.lcd-tab__name {
+  width: 5.3rem;
+  padding: 0;
+  text-align: center;
+}
+
+.lcd-tab__step {
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  padding: 0;
+}
+
+.lcd-search {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: 0.3rem;
+  padding: 0 0.5rem;
+  border: 0.06rem solid var(--lcd-line);
+  border-bottom: 0;
+  color: var(--lcd-dim);
+  cursor: text;
+}
+
+.lcd-search svg {
+  flex: none;
+  width: 0.7rem;
+  height: 0.7rem;
+}
+
+.lcd-search.is-on,
+.lcd-search:focus-within {
+  border-color: var(--lcd-hi);
+  color: var(--lcd-hi);
+}
+
+.lcd-search input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--lcd-ink);
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.lcd-search input::placeholder {
+  color: var(--lcd-dim);
+  opacity: 0.7;
+}
+
+.lcd-search__clear {
+  display: grid;
+  place-items: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--lcd-dim);
+  cursor: pointer;
+}
+
+.lcd-browser__note {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+  line-height: 1.15;
+  color: var(--lcd-hi);
+  border-bottom: 0.06rem solid var(--lcd-line);
+}
+
+.lcd-browser__note button {
+  flex: none;
+  padding: 0.15rem 0.6rem;
+  border: 0.06rem solid var(--lcd-hi);
+  background: transparent;
+  font-family: inherit;
+  font-weight: 600;
+  color: var(--lcd-hi);
+  cursor: pointer;
+}
+
+.lcd-tones {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1.66rem;
+  column-gap: 0.5rem;
+  align-content: start;
+  padding: 0.2rem 0.3rem 0.2rem 0.5rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(127, 162, 169, 0.6) transparent;
+}
+
+.lcd-tones__empty {
+  grid-column: 1 / -1;
+  padding: 1.2rem 0.4rem;
+  font-size: 0.95rem;
+  color: var(--lcd-dim);
+}
+
+.lcd-trow {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  border-bottom: 0.06rem solid rgba(160, 215, 225, 0.08);
+}
+
+.lcd-trow__pick {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.2rem 0 0.4rem;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--lcd-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.lcd-trow__num {
+  font-size: 0.82rem;
+  color: var(--lcd-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.lcd-trow__name {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lcd-trow__na {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.lcd-trow__fav {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(127, 162, 169, 0.3);
+  cursor: pointer;
+}
+
+.lcd-trow__fav svg {
+  width: 0.72rem;
+  height: 0.72rem;
+}
+
+.lcd-trow__fav.is-on {
+  color: var(--lcd-hi);
+}
+
+.lcd-trow.is-na .lcd-trow__pick {
+  color: rgba(127, 162, 169, 0.55);
+}
+
+.lcd-trow.is-current {
+  background: var(--lcd-hi);
+  border-bottom-color: transparent;
+}
+
+.lcd-trow.is-current .lcd-trow__pick,
+.lcd-trow.is-current .lcd-trow__num {
+  font-weight: 600;
+  color: #1a1206;
+}
+
+.lcd-trow.is-current .lcd-trow__fav {
+  color: rgba(26, 18, 6, 0.3);
+}
+
+.lcd-trow.is-current .lcd-trow__fav.is-on {
+  color: #1a1206;
+}
+
+.lcd-trow.is-loading .lcd-trow__name {
+  opacity: 0.6;
+}
+
+/* ---- equaliser ------------------------------------------------------------------------- */
+
+.lcd-eq {
+  padding: 0.45rem 0.6rem 0;
+}
+
+.lcd-eq__graph {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: rgba(0, 0, 0, 0.22);
+  border: 0.06rem solid var(--lcd-line);
+  touch-action: none;
+}
+
+.lcd-eq__grid {
+  stroke: rgba(160, 215, 225, 0.09);
+  stroke-width: 1;
+}
+
+.lcd-eq__grid.is-major {
+  stroke: rgba(160, 215, 225, 0.2);
+}
+
+.lcd-eq__grid.is-zero {
+  stroke: rgba(160, 215, 225, 0.38);
+}
+
+.lcd-eq__label {
+  font-family: var(--font-lcd);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--lcd-dim);
+}
+
+.lcd-eq__area {
+  fill: rgba(244, 170, 60, 0.16);
+}
+
+.lcd-eq__curve {
+  fill: none;
+  stroke: var(--lcd-hi);
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+}
+
+.lcd-eq__handle {
+  cursor: grab;
+}
+
+.lcd-eq__handle circle {
+  fill: #06141b;
+  stroke: var(--lcd-ink);
+  stroke-width: 1.6;
+}
+
+.lcd-eq__handle .lcd-eq__hit {
+  fill: transparent;
+  stroke: none;
+}
+
+.lcd-eq__handle text {
+  font-family: var(--font-lcd);
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: var(--lcd-ink);
+  pointer-events: none;
+}
+
+.lcd-eq__handle.is-selected circle:not(.lcd-eq__hit) {
+  fill: var(--lcd-hi);
+  stroke: var(--lcd-hi);
+}
+
+.lcd-eq__handle.is-selected text {
+  fill: #1a1206;
+}

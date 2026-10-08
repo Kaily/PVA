@@ -1,0 +1,23 @@
+Salamander Grand Piano V3
+=========================
+
+Recordings of a Yamaha C5 grand piano by Alexander Holm.
+
+Licence:  Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+          https://creativecommons.org/licenses/by/3.0/
+Source:   https://archive.org/details/SalamanderGrandPianoV3
+MP3 edition packaged by Jan Forst (npm: @audio-samples/piano-mp3-*,
+https://github.com/darosh/samples-piano-mp3).
+
+Changes made for PVA-61
+-----------------------
+- Six of the sixteen velocity layers are included (1, 4, 7, 10, 13, 16) as
+  folders v01 … v16, plus the 88 key-release samples in rel/.
+- Files were renamed from note names to MIDI note numbers
+  (for example "C4v7.mp3" → "v07/060.mp3", "rel40.mp3" → "rel/060.mp3").
+- The audio data in the files is unchanged. At run time the application
+  trims leading silence, may shorten and fade the tails, and adjusts the
+  left/right balance of each recording.
+
+If you redistribute these files or anything built from them, keep this
+attribution to Alexander Holm.

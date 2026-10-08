@@ -1,0 +1,192 @@
+/* ------------------------------------------------------------------
+   Keyboard reference card — styled like the printed quick-reference
+   card that ships in an instrument's box: light stock, dark ink.
+   It sits over the control panel and leaves the keybed free, because the
+   key-map editor needs the piano keys to stay clickable.
+   ------------------------------------------------------------------ */
+
+.help {
+  --kc: 2.9rem; /* one computer key */
+  position: fixed;
+  z-index: 20;
+  left: 50%;
+  top: 1.4rem;
+  width: 66rem;
+  max-width: calc(100vw - 2rem);
+  transform: translateX(-50%);
+  padding: 1.1rem 1.4rem 1.1rem;
+  border-radius: 0.35rem;
+  font-family: var(--font-panel);
+  color: #23211d;
+  background: linear-gradient(180deg, #f1ede4 0%, #e6e1d5 100%);
+  box-shadow:
+    0 0 0 0.07rem rgba(0, 0, 0, 0.5),
+    0 1.6rem 3.4rem rgba(0, 0, 0, 0.7);
+  user-select: none;
+}
+
+.help__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.6rem;
+  border-bottom: 0.12rem solid #23211d;
+}
+
+.help__head h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.help__close,
+.help__btn {
+  padding: 0.4rem 0.95rem;
+  border: 0.09rem solid #23211d;
+  border-radius: 0.2rem;
+  background: #23211d;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f1ede4;
+  cursor: pointer;
+}
+
+.help__close {
+  background: transparent;
+  color: #23211d;
+}
+
+.help__btn--quiet {
+  background: transparent;
+  color: #23211d;
+}
+
+.help__close:hover,
+.help__btn--quiet:hover {
+  background: rgba(35, 33, 29, 0.1);
+}
+
+.help__body {
+  display: flex;
+  gap: 1.8rem;
+  padding: 1rem 0 0.9rem;
+}
+
+.help__keys {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.help__row {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.kcap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: var(--kc);
+  height: var(--kc);
+  padding: 0.24rem 0.32rem;
+  border: 0.07rem solid rgba(35, 33, 29, 0.35);
+  border-radius: 0.24rem;
+  background: rgba(35, 33, 29, 0.05);
+  font-family: inherit;
+  color: rgba(35, 33, 29, 0.4);
+  text-align: left;
+}
+
+.kcap__cap {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.kcap__note {
+  font-size: 0.62rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* note keys take the colour of the piano key they play */
+.kcap.is-white {
+  background: #fbf9f4;
+  border-color: #23211d;
+  color: #23211d;
+}
+
+.kcap.is-black {
+  background: #23211d;
+  border-color: #23211d;
+  color: #f1ede4;
+}
+
+.kcap.is-control {
+  border-style: dashed;
+  border-color: #8a5a12;
+  color: #8a5a12;
+}
+
+.kcap:not(:disabled) {
+  cursor: pointer;
+}
+
+.kcap:not(:disabled):hover {
+  box-shadow: 0 0 0 0.14rem #c2410c;
+}
+
+.kcap.is-target {
+  box-shadow: 0 0 0 0.16rem #c2410c;
+}
+
+.help__list {
+  flex: 1;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.34rem;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.help__list > div {
+  display: grid;
+  grid-template-columns: 6.4rem 1fr;
+  gap: 0.6rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 0.06rem solid rgba(35, 33, 29, 0.18);
+}
+
+.help__list dt {
+  font-weight: 700;
+}
+
+.help__list dd {
+  margin: 0;
+}
+
+.help__foot {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-top: 0.8rem;
+  border-top: 0.06rem solid rgba(35, 33, 29, 0.35);
+  font-size: 0.92rem;
+}
+
+.help__hint {
+  flex: 1;
+  color: rgba(35, 33, 29, 0.7);
+}
+
+.help__step {
+  font-weight: 700;
+  color: #9a3412;
+}

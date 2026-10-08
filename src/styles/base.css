@@ -1,0 +1,145 @@
+/* ------------------------------------------------------------------
+   PVA-61 — design tokens and page base
+
+   Everything on the instrument is sized in rem, and the root font size is
+   derived from the viewport. The whole instrument therefore scales as one
+   physical object and keeps its proportions; below the minimum size the
+   page scrolls sideways instead of squeezing the keys (TASKS.md §50).
+   ------------------------------------------------------------------ */
+
+:root {
+  /* casing */
+  --case-hi: #3b3e42;
+  --case: #2a2c2f;
+  --case-lo: #1d1f21;
+  --case-deep: #121314;
+  --well: #0d0e0f;
+
+  /* printed legends */
+  --ink: #d4d7da;
+  --ink-dim: #8b9198;
+  --ink-faint: #5d6268;
+
+  /* indicators */
+  --led-amber: #ffb23e;
+  --led-red: #ff4336;
+  --led-green: #3fe08f;
+  --led-off: #2a221a;
+
+  /* display */
+  --lcd-bg-1: #06141b;
+  --lcd-bg-2: #0b222c;
+  --lcd-ink: #e7f2f0;
+  --lcd-dim: #7fa2a9;
+  --lcd-line: rgba(160, 215, 225, 0.14);
+  --lcd-hi: #f4aa3c;
+
+  /* keys */
+  --ivory: #f3efe5;
+  --ivory-shade: #d9d3c5;
+  --ebony: #171718;
+  --felt: #6a141b;
+
+  --font-panel: 'Barlow Semi Condensed', 'Arial Narrow', 'Helvetica Neue', Arial, sans-serif;
+  --font-lcd: 'Rajdhani', 'Barlow Semi Condensed', 'Segoe UI', sans-serif;
+
+  /* 16 px at a 1952 px wide viewport; limited by height on wide/short windows */
+  font-size: clamp(8.5px, min(calc(100vw / 122), calc(100vh / 55)), 32px);
+}
+
+@supports (height: 100dvh) {
+  :root {
+    font-size: clamp(8.5px, min(calc(100vw / 122), calc(100dvh / 55)), 32px);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-panel);
+  color: var(--ink);
+  /* the desk the instrument stands on: dark walnut with a soft pool of light */
+  background:
+    radial-gradient(ellipse 85% 70% at 50% 38%, rgba(255, 226, 190, 0.11), transparent 70%),
+    repeating-linear-gradient(91deg, rgba(0, 0, 0, 0.05) 0 0.12rem, transparent 0.12rem 0.55rem, rgba(255, 255, 255, 0.012) 0.55rem 0.62rem, transparent 0.62rem 1.3rem),
+    linear-gradient(180deg, #2c231c 0%, #231b16 55%, #18120e 100%);
+  background-attachment: fixed;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.stage {
+  min-height: 100vh;
+  min-width: 122rem;
+  display: grid;
+  place-items: center;
+  padding: 1rem 0 1.6rem;
+}
+
+@supports (height: 100dvh) {
+  .stage {
+    min-height: 100dvh;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus {
+  outline: none;
+}
+
+/* visible keyboard focus, in the indicator colour so it reads as part of the panel */
+:focus-visible {
+  outline: 0.14rem solid var(--led-amber);
+  outline-offset: 0.18rem;
+}
+
+.fatal {
+  max-width: 34rem;
+  margin: 18vh auto;
+  padding: 2rem;
+  font-size: max(1.1rem, 15px);
+  line-height: 1.5;
+  user-select: text;
+}
+
+.fatal h1 {
+  font-size: 1.6em;
+  margin: 0 0 0.6em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lcd__page,
+  .lcd-popup,
+  .lcd-boot__bar span {
+    animation: none !important;
+    transition: none !important;
+  }
+}
