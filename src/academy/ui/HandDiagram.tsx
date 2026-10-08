@@ -10,7 +10,7 @@ const FINGERS: { n: number; x: number; y: number; h: number; r?: number }[] = [
   { n: 5, x: 89, y: 28, h: 40 },
 ];
 
-export function HandDiagram({ finger }: { finger: number }) {
+export function HandDiagram({ finger, caption }: { finger: number; caption: string }) {
   return (
     <figure className="ac-hand" aria-label={`Right hand, finger ${finger}`}>
       <svg viewBox="0 0 112 124" role="img" aria-hidden="true">
@@ -24,7 +24,7 @@ export function HandDiagram({ finger }: { finger: number }) {
           </g>
         ))}
       </svg>
-      <figcaption>दायाँ हाथ</figcaption>
+      <figcaption>{caption}</figcaption>
     </figure>
   );
 }

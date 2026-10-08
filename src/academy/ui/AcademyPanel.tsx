@@ -28,10 +28,11 @@ import type { AppState } from '../../state/appState';
 import { PanelButton } from '../../ui/controls/PanelButton';
 import { useApp } from '../../ui/hooks';
 import { closeAcademy, computerKeyFor, lessonWarnings, prepareInstrumentForLesson } from '../actions';
+import { LANG_NAME, LANGS, say, ui, type Lang, type UiKey } from '../i18n';
 import type { AcademyState, NoteMark, PracticeMode } from '../LessonEngine';
 import { dayKey, lessonCompletion, recommendedMode, weakestNotes } from '../progress';
 import { PASS_ACCURACY, type PracticeResult } from '../scoring';
-import { durationLabel, FINGER_NAMES_HI, noteSeconds, type TimedNote } from '../song';
+import { durationLabel, FINGER_NAMES, noteSeconds, type TimedNote } from '../song';
 import { HandDiagram } from './HandDiagram';
 
 /* ------------------------------------------------------------------ */
@@ -42,6 +43,12 @@ const academy = () => services().academy;
 
 function useAcademy<S>(selector: (s: AcademyState) => S): S {
   return useStore(academy().store, selector);
+}
+
+/** The teaching language and a label lookup for it. Hindi until a language is chosen. */
+function useLang(): { lang: Lang; t: (key: UiKey) => string } {
+  const lang = useAcademy((s) => s.lang ?? 'hi');
+  return { lang, t: (key) => ui(key, lang) };
 }
 
 /** A small panel switch that never takes keyboard focus (so the computer keys keep playing notes). */
@@ -94,11 +101,11 @@ function Section({ title, className, children }: { title: string; className: str
   );
 }
 
-const MODES: { id: PracticeMode; letter: string; en: string; hi: string; icon: IconDefinition }[] = [
-  { id: 'watch', letter: 'A', en: 'Watch & Listen', hi: 'सुनें और देखें', icon: faEye },
-  { id: 'step', letter: 'B', en: 'Step-by-Step', hi: 'एक-एक note', icon: faShoePrints },
-  { id: 'guided', letter: 'C', en: 'Guided Practice', hi: 'metronome के साथ', icon: faStopwatch },
-  { id: 'perform', letter: 'D', en: 'Independent', hi: 'बिना मदद के', icon: faStar },
+const MODES: { id: PracticeMode; letter: string; name: string; sub: UiKey; icon: IconDefinition }[] = [
+  { id: 'watch', letter: 'A', name: 'Watch & Listen', sub: 'modeWatchSub', icon: faEye },
+  { id: 'step', letter: 'B', name: 'Step-by-Step', sub: 'modeStepSub', icon: faShoePrints },
+  { id: 'guided', letter: 'C', name: 'Guided Practice', sub: 'modeGuidedSub', icon: faStopwatch },
+  { id: 'perform', letter: 'D', name: 'Independent', sub: 'modePerformSub', icon: faStar },
 ];
 
 const MODE_NAME: Record<PracticeMode, string> = { watch: 'Watch & Listen', step: 'Step-by-Step', guided: 'Guided Practice', perform: 'Independent Performance' };
@@ -112,12 +119,59 @@ const beatsText = (b: number): string => BEAT_FRACTION[String(b)] ?? String(b);
 
 /** The Piano Academy, shown in place of the control panel. The keybed below stays the instrument's own. */
 export function AcademyPanel() {
+  const chosen = useAcademy((s) => s.lang !== null);
+  const lang = useAcademy((s) => s.lang ?? 'hi');
   return (
-    <div className="panel panel--academy" role="region" aria-label="Piano Academy">
+    <div className="panel panel--academy" role="region" aria-label="Piano Academy" lang={lang}>
       <LessonColumn />
       <TeachScreen />
       <PracticeColumn />
       <ProgressColumn />
+      {!chosen && <LanguageChooser />}
+    </div>
+  );
+}
+
+/** First visit: the teaching language must be chosen before the lesson starts. */
+function LanguageChooser() {
+  return (
+    <div className="ac-langpick" role="dialog" aria-modal="true" aria-label="भाषा चुनें · Choose your language">
+      <div className="ac-langpick__card">
+        <h2>
+          {ui('chooseTitle', 'hi')} <span>·</span> {ui('chooseTitle', 'en')}
+        </h2>
+        <div className="ac-langpick__options">
+          {LANGS.map((l) => (
+            <button key={l} type="button" lang={l} className="ac-langpick__btn" onPointerDown={(e) => e.preventDefault()} onClick={() => academy().setLang(l)}>
+              <b>{LANG_NAME[l]}</b>
+              <small>{ui('chooseHint', l)}</small>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Compact language switch for the screen header. */
+function LanguageSwitch() {
+  const { lang, t } = useLang();
+  return (
+    <div className="ac-seg ac-seg--lcd" role="radiogroup" aria-label={t('language')}>
+      {LANGS.map((l) => (
+        <button
+          key={l}
+          type="button"
+          role="radio"
+          lang={l}
+          aria-checked={l === lang}
+          className={`ac-seg__btn${l === lang ? ' is-on' : ''}`}
+          onPointerDown={(e) => e.preventDefault()}
+          onClick={() => academy().setLang(l)}
+        >
+          {l === 'hi' ? 'हिंदी' : 'EN'}
+        </button>
+      ))}
     </div>
   );
 }
@@ -129,6 +183,7 @@ function LessonColumn() {
   const phrase = useAcademy((s) => s.phrase);
   const loop = useAcademy((s) => s.loop);
   const lesson = useAcademy((s) => s.progress.lessons[s.songId]);
+  const { t } = useLang();
   const phrases = academy().compiled.phrases;
   return (
     <Section title="Lesson" className="ac-sec--lesson">
@@ -152,12 +207,12 @@ function LessonColumn() {
               <span className="ac-mode__letter">{m.letter}</span>
               <span className="ac-mode__text">
                 <b>
-                  <FontAwesomeIcon icon={m.icon} /> {m.en}
+                  <FontAwesomeIcon icon={m.icon} /> {m.name}
                 </b>
-                <small>{m.hi}</small>
+                <small>{t(m.sub)}</small>
               </span>
               <span className="ac-mode__score">
-                {done && <FontAwesomeIcon icon={faCircleCheck} className="ac-ok" title="पूरा" />}
+                {done && <FontAwesomeIcon icon={faCircleCheck} className="ac-ok" title={t('done')} />}
                 {best !== undefined && <small>{best}%</small>}
               </span>
             </button>
@@ -165,15 +220,15 @@ function LessonColumn() {
         })}
       </div>
       <div className="ac-field">
-        <span className="ac-field__label">अभ्यास का हिस्सा</span>
+        <span className="ac-field__label">{t('section')}</span>
         <Segmented<number>
           label="Song section"
           value={phrase === null ? -1 : phrase}
-          options={[{ value: -1, label: 'पूरा', title: 'Whole song' }, ...phrases.map((p) => ({ value: p.index, label: `P${p.index + 1}`, title: `${p.title}: ${p.lyric}` }))]}
+          options={[{ value: -1, label: t('wholeSong'), title: 'Whole song' }, ...phrases.map((p) => ({ value: p.index, label: `P${p.index + 1}`, title: `${p.title}: ${p.lyric}` }))]}
           onChange={(v) => academy().setPhrase(v < 0 ? null : v)}
         />
       </div>
-      <Toggle label="Loop — बार-बार दोहराएँ" on={loop} onChange={(v) => academy().setLoop(v)} hint="Loop the selected section" />
+      <Toggle label={t('loop')} on={loop} onChange={(v) => academy().setLoop(v)} hint="Loop the selected section" />
     </Section>
   );
 }
@@ -185,6 +240,7 @@ function TeachScreen() {
   const status = useAcademy((s) => s.status);
   const count = useAcademy((s) => s.count);
   const result = useAcademy((s) => s.result);
+  const { lang, t } = useLang();
   const song = academy().compiled;
   const def = song.def;
   const hidden = mode === 'perform' && status !== 'finished';
@@ -194,13 +250,14 @@ function TeachScreen() {
         <header className="ac-head">
           <span className="ac-head__brand">PIANO ACADEMY</span>
           <span className="ac-head__title">{def.title}</span>
-          <span className="ac-chip">{def.difficulty}</span>
+          <span className="ac-chip">{def.difficulty[lang]}</span>
           <span className="ac-chip">{def.keySignature}</span>
-          <span className="ac-chip">{def.practice}</span>
+          <span className="ac-chip">{def.practice[lang]}</span>
           <span className="ac-chip">
             {def.timeSignature.beats}/{def.timeSignature.unit}
           </span>
           <span className="ac-head__mode">{MODE_NAME[mode]}</span>
+          <LanguageSwitch />
         </header>
         <Warnings />
         <PhraseBar />
@@ -210,7 +267,7 @@ function TeachScreen() {
         {count && (
           <div className="ac-count" aria-live="assertive">
             <span>{count}</span>
-            <small>गिनती…</small>
+            <small>{t('counting')}</small>
           </div>
         )}
         {result && <ResultCard result={result} />}
@@ -221,22 +278,23 @@ function TeachScreen() {
 }
 
 function Warnings() {
-  const warnings = useApp((s: AppState) => lessonWarnings(s).join('\n'));
+  const warnings = useApp((s: AppState) => lessonWarnings(s).join(','));
   const audio = useApp((s) => s.engine === 'running');
+  const { t } = useLang();
   if (!warnings && audio) return null;
   return (
     <div className="ac-warn" role="alert">
       <FontAwesomeIcon icon={faTriangleExclamation} />
       <span className="ac-warn__text">
-        {!audio && <span>आवाज़ अभी बंद है — keyboard पर या कहीं भी एक बार क्लिक करें।</span>}
+        {!audio && <span>{t('audioOff')}</span>}
         {warnings &&
-          warnings.split('\n').map((w) => (
-            <span key={w}>{w}</span>
+          warnings.split(',').map((w) => (
+            <span key={w}>{t(w as UiKey)}</span>
           ))}
       </span>
       {warnings && (
         <button type="button" className="ac-warn__fix" onPointerDown={(e) => e.preventDefault()} onClick={prepareInstrumentForLesson}>
-          <FontAwesomeIcon icon={faWrench} /> ठीक करें
+          <FontAwesomeIcon icon={faWrench} /> {t('fix')}
         </button>
       )}
     </div>
@@ -271,13 +329,14 @@ function PhraseBar() {
 }
 
 function NoteCard({ note, role, tempo }: { note: TimedNote | undefined; role: 'prev' | 'next'; tempo: number }) {
+  const { t } = useLang();
   if (!note) return <div className={`ac-mini ac-mini--${role} is-empty`} />;
   return (
     <div className={`ac-mini ac-mini--${role}`}>
-      <small>{role === 'prev' ? 'पिछला' : 'अगला'}</small>
+      <small>{t(role)}</small>
       <b>{note.name}</b>
       <span>
-        उँगली {note.finger} · {note.lyric}
+        {t('finger')} {note.finger} · {note.lyric}
       </span>
       <span className="ac-mini__dur">
         {beatsText(note.beats)} beat · {noteSeconds(note.beats, tempo).toFixed(2)} s
@@ -293,11 +352,19 @@ function Focus() {
   const fingers = useAcademy((s) => s.showFingers);
   const mode = useAcademy((s) => s.mode);
   const keyMap = useApp((s) => s.keyMap);
+  const { lang, t } = useLang();
   const song = academy().compiled;
   const note = song.notes[index];
   const dur = durationLabel(note.beats);
   const pcKey = computerKeyFor(keyMap, note.midi);
-  const label = mode === 'watch' ? 'अभी बज रहा है' : 'अब यह key दबाएँ';
+  const label = t(mode === 'watch' ? 'nowPlaying' : 'pressNow');
+  const hold = say(
+    {
+      id: 'holdFor',
+      p: { label: dur[lang], en: dur.en, beats: beatsText(note.beats), plural: note.beats > 1 ? 's' : '', sec: noteSeconds(note.beats, tempo).toFixed(2) },
+    },
+    lang,
+  );
   return (
     <div className="ac-focus">
       <NoteCard note={song.notes[index - 1]} role="prev" tempo={tempo} />
@@ -308,7 +375,7 @@ function Focus() {
           <div className="ac-now__facts">
             {fingers && (
               <span className="ac-now__finger">
-                उँगली <b>{note.finger}</b> — {FINGER_NAMES_HI[note.finger]}
+                {t('finger')} <b>{note.finger}</b> — {FINGER_NAMES[note.finger][lang]}
               </span>
             )}
             <span className="ac-now__lyric">“{note.lyric}”</span>
@@ -316,14 +383,12 @@ function Focus() {
         </div>
         <div className="ac-now__dur">
           <span className="ac-durbar" style={{ ['--w' as string]: `${Math.min(1, note.beats / 3) * 100}%` }} />
-          <span>
-            {dur.hi} ({dur.en}) · {beatsText(note.beats)} beat ≈ {noteSeconds(note.beats, tempo).toFixed(2)} सेकंड दबाए रखें
-          </span>
+          <span>{hold}</span>
         </div>
         <div className="ac-now__foot">
           {pcKey && (
             <span>
-              Computer key: <kbd>{pcKey}</kbd>
+              {t('computerKey')}: <kbd>{pcKey}</kbd>
             </span>
           )}
           <span className="ac-beats" aria-label="Beat">
@@ -337,7 +402,7 @@ function Focus() {
         <NoteCard note={song.notes[index + 1]} role="next" tempo={tempo} />
         <NoteCard note={song.notes[index + 2]} role="next" tempo={tempo} />
       </div>
-      {fingers && <HandDiagram finger={note.finger} />}
+      {fingers && <HandDiagram finger={note.finger} caption={t('rightHand')} />}
     </div>
   );
 }
@@ -347,28 +412,30 @@ function PerformFocus() {
   const status = useAcademy((s) => s.status);
   const song = academy().compiled;
   const phrase = useAcademy((s) => s.phrase);
+  const { lang, t } = useLang();
   const first = song.notes[phrase === null ? 0 : song.phrases[phrase].first];
   return (
     <div className="ac-focus ac-focus--perform">
       <div className="ac-now">
         <small className="ac-now__label">Independent Performance</small>
-        <b className="ac-now__big">{status === 'running' ? 'अपनी याद से बजाएँ…' : `शुरुआत ${first.name} से`}</b>
-        <span className="ac-now__lyric">आगे के notes छिपे हैं। बजाने के बाद पूरा हिसाब दिखेगा।</span>
+        <b className="ac-now__big">{status === 'running' ? t('performPlaying') : say({ id: 'startOn', p: { note: first.name } }, lang)}</b>
+        <span className="ac-now__lyric">{t('performHidden')}</span>
         <span className="ac-now__count">
-          बजाए गए notes: <b>{played}</b>
+          {t('notesPlayed')}: <b>{played}</b>
         </span>
       </div>
     </div>
   );
 }
 
-const MARK_TITLE: Record<NoteMark, string> = { pending: '', ok: 'सही', fixed: 'सही (दूसरी कोशिश / समय थोड़ा हटकर)', bad: 'गलत key दबाई', missed: 'छूट गया' };
+const MARK_TITLE: Record<NoteMark, UiKey | null> = { pending: null, ok: 'markOk', fixed: 'markFixed', bad: 'markBad', missed: 'markMissed' };
 
 function NoteStrip() {
   const marks = useAcademy((s) => s.marks);
   const index = useAcademy((s) => s.index);
   const selected = useAcademy((s) => s.phrase);
   const status = useAcademy((s) => s.status);
+  const { t } = useLang();
   const song = academy().compiled;
   return (
     <ol className="ac-strip" aria-label="Melody">
@@ -380,7 +447,7 @@ function NoteStrip() {
             key={n.index}
             className={`ac-strip__n is-${marks[n.index]}${n.index === index && status !== 'finished' ? ' is-current' : ''}${out ? ' is-out' : ''}${first ? ' is-phrase' : ''}`}
             style={{ flexGrow: Math.max(1, n.beats) }}
-            title={MARK_TITLE[marks[n.index]]}
+            title={MARK_TITLE[marks[n.index]] ? t(MARK_TITLE[marks[n.index]]!) : undefined}
           >
             <b>{n.name}</b>
             <span>{n.lyric}</span>
@@ -396,18 +463,21 @@ function Guidance() {
   const index = useAcademy((s) => s.index);
   const mode = useAcademy((s) => s.mode);
   const status = useAcademy((s) => s.status);
+  const { lang, t } = useLang();
   const song = academy().compiled;
   const note = song.notes[index];
   const phrase = song.phrases[note.phrase];
-  const tip = mode === 'perform' ? song.def.intro : note.shift && status !== 'finished' ? `हाथ खिसकाएँ: ${note.shift}` : phrase.tip;
+  const shift = note.shift && status !== 'finished' ? note.shift : null;
+  const tip = mode === 'perform' ? song.def.intro[lang] : shift ? shift[lang] : phrase.tip[lang];
+  const heading = mode === 'perform' ? t('remember') : shift ? t('moveHand') : phrase.title;
   return (
     <div className="ac-guide">
       <p className="ac-guide__tip">
-        <b>{mode === 'perform' ? 'याद रखें' : note.shift ? 'ध्यान दें' : phrase.title}:</b> {tip}
+        <b>{heading}:</b> {tip}
       </p>
       {feedback && (
         <p key={feedback.key} className={`ac-guide__fb is-${feedback.tone}`} aria-live="polite">
-          {feedback.text}
+          {say(feedback.msg, lang)}
         </p>
       )}
     </div>
@@ -416,18 +486,21 @@ function Guidance() {
 
 function ResultCard({ result }: { result: PracticeResult }) {
   const lesson = useAcademy((s) => s.progress.lessons[s.songId]);
+  const { lang, t } = useLang();
   const song = academy().compiled;
   const next = recommendedMode(lesson);
   const passed = result.accuracy >= PASS_ACCURACY[result.mode];
   const rows: [string, number | string][] = [
-    ['सही notes', `${result.correct} / ${result.total}`],
-    ['गलत keys', result.wrong],
-    ['छूटे notes', result.missed],
+    [t('correctNotes'), `${result.correct} / ${result.total}`],
+    [t('wrongKeys'), result.wrong],
+    [t('missedNotes'), result.missed],
   ];
-  if (result.mode !== 'step') rows.push(['फालतू notes', result.extra]);
-  if (result.timing !== null) rows.push([result.mode === 'perform' ? 'Rhythm (लय)' : 'समय पर (timing)', `${result.timing}%`]);
-  if (result.playedBpm) rows.push(['आपकी रफ़्तार', `${result.playedBpm} BPM`]);
-  rows.push(['समय लगा', `${result.duration} s`]);
+  if (result.mode !== 'step') rows.push([t('extraNotes'), result.extra]);
+  if (result.timing !== null) rows.push([t(result.mode === 'perform' ? 'rhythm' : 'onTime'), `${result.timing}%`]);
+  if (result.playedBpm) rows.push([t('yourTempo'), `${result.playedBpm} BPM`]);
+  rows.push([t('timeTaken'), `${result.duration} s`]);
+  const issueNote = (i: PracticeResult['issues'][number]): string =>
+    i.wrong > 0 ? t('issueWrong') : i.missed ? t('issueMissed') : i.timing === 'late' ? t('issueLate') : i.timing === 'early' ? t('issueEarly') : '';
   return (
     <div className="ac-result" role="dialog" aria-label="Practice result">
       <button type="button" className="ac-result__close" aria-label="Close result" onPointerDown={(e) => e.preventDefault()} onClick={() => academy().dismissResult()}>
@@ -436,11 +509,11 @@ function ResultCard({ result }: { result: PracticeResult }) {
       <div className={`ac-result__score${passed ? ' is-pass' : ''}`}>
         <b>{result.accuracy}%</b>
         <small>{MODE_NAME[result.mode]} · Accuracy</small>
-        <span>{passed ? 'Pass ✓' : `Pass के लिए ${PASS_ACCURACY[result.mode]}%`}</span>
-        {result.range !== 'full' && <small>सिर्फ़ {result.range.replace('phrase-', 'Phrase ')} — mode पूरा करने के लिए पूरा गाना बजाएँ</small>}
+        <span>{passed ? 'Pass ✓' : say({ id: 'passNeeds', p: { n: PASS_ACCURACY[result.mode] } }, lang)}</span>
+        {result.range !== 'full' && <small>{say({ id: 'phraseOnly', p: { phrase: result.range.replace('phrase-', 'Phrase ') } }, lang)}</small>}
       </div>
       <div className="ac-result__body">
-        <p className="ac-result__comment">{result.comment}</p>
+        <p className="ac-result__comment">{say({ id: result.commentKey }, lang)}</p>
         <dl className="ac-result__rows">
           {rows.map(([k, v]) => (
             <div key={k}>
@@ -451,12 +524,12 @@ function ResultCard({ result }: { result: PracticeResult }) {
         </dl>
         {result.issues.length > 0 && (
           <p className="ac-result__issues">
-            ध्यान दें:{' '}
+            {t('look')}:{' '}
             {result.issues.slice(0, 6).map((i) => {
               const n = song.notes[i.index];
               return (
                 <span key={i.index} className="ac-tag">
-                  P{n.phrase + 1} {n.name} “{n.lyric}”{i.wrong > 0 ? ' गलत key' : i.missed ? ' छूटा' : i.timing === 'late' ? ' देर से' : i.timing === 'early' ? ' जल्दी' : ''}
+                  P{n.phrase + 1} {n.name} “{n.lyric}” {issueNote(i)}
                 </span>
               );
             })}
@@ -464,11 +537,11 @@ function ResultCard({ result }: { result: PracticeResult }) {
         )}
         <div className="ac-result__actions">
           <button type="button" className="ac-btn" onPointerDown={(e) => e.preventDefault()} onClick={() => academy().start()}>
-            <FontAwesomeIcon icon={faRotateLeft} /> फिर से
+            <FontAwesomeIcon icon={faRotateLeft} /> {t('again')}
           </button>
           {next !== result.mode && (
             <button type="button" className="ac-btn ac-btn--go" onPointerDown={(e) => e.preventDefault()} onClick={() => academy().setMode(next)}>
-              आगे: {MODE_NAME[next]}
+              {t('nextMode')}: {MODE_NAME[next]}
             </button>
           )}
         </div>
@@ -486,6 +559,7 @@ function PracticeColumn() {
   const metronome = useAcademy((s) => s.metronome);
   const guide = useAcademy((s) => s.guideMelody);
   const def = academy().compiled.def;
+  const { t } = useLang();
   const running = status === 'running' || status === 'countin';
   const canPause = mode === 'watch' || mode === 'guided';
   const playLabel = running ? (canPause ? 'Pause' : 'Running') : status === 'paused' ? 'Resume' : 'Start';
@@ -508,19 +582,19 @@ function PracticeColumn() {
       <div className="ac-transport">
         {mode === 'step' && (
           <>
-            <PanelButton variant="wide" label="Note सुनें" ariaLabel="Listen to the note" cap={<FontAwesomeIcon icon={faVolumeHigh} />} onPress={() => a.listen()} />
-            <PanelButton variant="wide" label="Phrase सुनें" ariaLabel="Listen to the phrase" cap={<FontAwesomeIcon icon={faEarListen} />} onPress={() => a.previewPhrase()} />
+            <PanelButton variant="wide" label={t('hearNote')} ariaLabel="Listen to the note" cap={<FontAwesomeIcon icon={faVolumeHigh} />} onPress={() => a.listen()} />
+            <PanelButton variant="wide" label={t('hearPhrase')} ariaLabel="Listen to the phrase" cap={<FontAwesomeIcon icon={faEarListen} />} onPress={() => a.previewPhrase()} />
           </>
         )}
         {mode === 'perform' && (
           <PanelButton variant="wide" label="Finish" ariaLabel="Finish the performance" cap={<FontAwesomeIcon icon={faFlagCheckered} />} disabled={status !== 'running'} onPress={() => a.finishPerformance()} />
         )}
         {mode !== 'perform' && (
-          <PanelButton variant="wide" label="Phrase दोहराएँ" ariaLabel="Repeat this phrase" cap={<FontAwesomeIcon icon={faRepeat} />} onPress={() => a.repeatPhrase()} />
+          <PanelButton variant="wide" label={t('repeatPhrase')} ariaLabel="Repeat this phrase" cap={<FontAwesomeIcon icon={faRepeat} />} onPress={() => a.repeatPhrase()} />
         )}
       </div>
       <div className="ac-tempo">
-        <span className="ac-field__label">Tempo (रफ़्तार)</span>
+        <span className="ac-field__label">{t('tempo')}</span>
         <div className="ac-tempo__row">
           <PanelButton variant="small" cap={<FontAwesomeIcon icon={faMinus} />} ariaLabel={`Slower, now ${tempo}`} repeat onPress={() => a.setTempo(tempo - 2)} />
           <output className="ac-tempo__value">
@@ -536,19 +610,19 @@ function PracticeColumn() {
           onChange={(v) => a.setTempo(v)}
         />
       </div>
-      <Toggle label="Metronome (टिक-टिक)" on={metronome} onChange={(v) => a.setMetronome(v)} />
-      {mode === 'guided' && <Toggle label="धीमी आवाज़ में धुन साथ बजे" on={guide} onChange={(v) => a.setGuideMelody(v)} hint="Guide melody" />}
+      <Toggle label={t('metronome')} on={metronome} onChange={(v) => a.setMetronome(v)} />
+      {mode === 'guided' && <Toggle label={t('guideMelody')} on={guide} onChange={(v) => a.setGuideMelody(v)} hint="Guide melody" />}
     </Section>
   );
 }
 
 /* ---- far right: progress, display and input ------------------------ */
 
-function fmtDuration(sec: number): string {
+function fmtDuration(sec: number, lang: Lang): string {
   if (sec < 60) return `${Math.round(sec)} s`;
   const m = Math.round(sec / 60);
-  if (m < 60) return `${m} मिनट`;
-  return `${Math.floor(m / 60)} घंटे ${m % 60} मिनट`;
+  if (m < 60) return `${m} ${ui('minutes', lang)}`;
+  return `${Math.floor(m / 60)} ${ui('hours', lang)} ${m % 60} ${ui('minutes', lang)}`;
 }
 
 function ProgressColumn() {
@@ -561,6 +635,7 @@ function ProgressColumn() {
   const midiStatus = useApp((s) => s.midiStatus);
   const midiInputs = useApp((s) => s.midiInputs);
   const midiInput = useApp((s) => s.midiInput);
+  const { lang, t } = useLang();
   const song = academy().compiled;
   const lesson = progress.lessons[songId];
   const today = progress.daily[dayKey(new Date())] ?? 0;
@@ -571,16 +646,16 @@ function ProgressColumn() {
   return (
     <Section title="Progress" className="ac-sec--progress">
       <div className="ac-exit">
-        <PanelButton variant="wide" label="Instrument पर लौटें" ariaLabel="Back to the instrument" cap={<FontAwesomeIcon icon={faArrowLeft} />} onPress={closeAcademy} />
+        <PanelButton variant="wide" label={t('back')} ariaLabel="Back to the instrument" cap={<FontAwesomeIcon icon={faArrowLeft} />} onPress={closeAcademy} />
       </div>
       <div className="ac-stats">
         <div>
-          <small>आज</small>
-          <b>{fmtDuration(today)}</b>
+          <small>{t('today')}</small>
+          <b>{fmtDuration(today, lang)}</b>
         </div>
         <div>
-          <small>कुल</small>
-          <b>{fmtDuration(progress.totalSeconds)}</b>
+          <small>{t('total')}</small>
+          <b>{fmtDuration(progress.totalSeconds, lang)}</b>
         </div>
         <div>
           <small>Lesson</small>
@@ -592,7 +667,7 @@ function ProgressColumn() {
       </div>
       {weak.length > 0 && (
         <p className="ac-weak">
-          कमज़ोर notes:{' '}
+          {t('weakNotes')}:{' '}
           {weak.map((i) => (
             <span key={i} className="ac-tag" title={`Phrase ${song.notes[i].phrase + 1}`}>
               P{song.notes[i].phrase + 1} {song.notes[i].name} “{song.notes[i].lyric}”
@@ -605,16 +680,16 @@ function ProgressColumn() {
           {recent.map((r) => (
             <li key={r.at}>
               <span>{MODE_NAME[r.mode].split(' ')[0]}</span>
-              <span>{r.range === 'full' ? 'पूरा' : r.range.replace('phrase-', 'P')}</span>
+              <span>{r.range === 'full' ? t('wholeSong') : r.range.replace('phrase-', 'P')}</span>
               <b>{r.accuracy}%</b>
             </li>
           ))}
         </ul>
       )}
       <div className="ac-settings">
-        <Toggle label="Finger numbers" on={fingers} onChange={(v) => academy().setShowFingers(v)} />
-        <Toggle label="Key पर note का नाम" on={names} onChange={(v) => academy().setShowNames(v)} />
-        <Toggle label="सभी keys पर labels" on={labels !== 'off'} onChange={(v) => act.setNoteLabels(v ? 'note' : 'off')} />
+        <Toggle label={t('fingers')} on={fingers} onChange={(v) => academy().setShowFingers(v)} />
+        <Toggle label={t('noteNames')} on={names} onChange={(v) => academy().setShowNames(v)} />
+        <Toggle label={t('allLabels')} on={labels !== 'off'} onChange={(v) => act.setNoteLabels(v ? 'note' : 'off')} />
       </div>
       <div className="ac-field">
         <span className="ac-field__label">Input</span>
@@ -622,7 +697,7 @@ function ProgressColumn() {
           label="Input"
           value={input}
           options={[
-            { value: 'all', label: 'सभी' },
+            { value: 'all', label: t('all') },
             { value: 'computer', label: 'Computer', title: 'Mouse, touch and computer keys' },
             { value: 'midi', label: 'MIDI' },
           ]}
@@ -638,7 +713,7 @@ function ProgressColumn() {
               e.target.blur(); // keep the computer keys playing notes
             }}
           >
-            <option value="all">सभी MIDI devices</option>
+            <option value="all">{t('allMidi')}</option>
             {connected.map((i) => (
               <option key={i.id} value={i.id}>
                 {i.name}
@@ -647,11 +722,7 @@ function ProgressColumn() {
           </select>
         ) : (
           <small className="ac-midi-note">
-            {midiStatus === 'unsupported'
-              ? 'यह browser MIDI नहीं चलाता — Chrome / Edge लें।'
-              : midiStatus === 'denied'
-                ? 'MIDI की अनुमति नहीं मिली।'
-                : 'कोई MIDI keyboard नहीं जुड़ा।'}
+            {t(midiStatus === 'unsupported' ? 'midiUnsupported' : midiStatus === 'denied' ? 'midiDenied' : 'midiNone')}
           </small>
         )}
       </div>

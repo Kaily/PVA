@@ -172,7 +172,12 @@ async function botPlay(plan) {
 console.log('\nPVA-61 Piano Academy — end-to-end checks\n');
 await page.goto(URL);
 await page.waitForFunction(() => window.__pva && !window.__pva.store.get().booting, null, { timeout: 30000 });
-await page.evaluate(() => window.localStorage.removeItem('pva61.academy'));
+await page.evaluate(() => {
+  window.localStorage.removeItem('pva61.academy');
+  window.localStorage.removeItem('pva61.academy-settings');
+});
+await page.reload();
+await page.waitForFunction(() => window.__pva && !window.__pva.store.get().booting, null, { timeout: 30000 });
 // the tone library decodes in the background after boot; let it finish so timings are not disturbed
 await page.waitForFunction(() => window.__pva.store.get().load.phase === 'done', null, { timeout: 120000 });
 const melody = await AC.notes();
@@ -190,8 +195,48 @@ await test('Academy opens in place of the panel; the keybed stays the instrument
   const ac = await AC.state();
   assert(ac.open && ac.mode === 'watch' && ac.index === 0, 'Academy state wrong');
   assert(melody.length === 25 && melody[0].midi === 67, 'song data wrong');
+  // first visit: the language has to be chosen
+  assert(ac.lang === null && (await page.locator('.ac-langpick').count()) === 1, 'no language chooser on the first visit');
+  await page.screenshot({ path: join(outDir, 'academy-language.png') });
+  await page.locator('.ac-langpick__btn[lang="hi"]').click();
+  assert((await page.locator('.ac-langpick').count()) === 0, 'chooser still shown');
+  assert((await AC.state()).lang === 'hi', 'Hindi not chosen');
   await installSpies();
-  return '25 notes, 60 BPM, panel metronome paused';
+  return '25 notes, 60 BPM, panel metronome paused, language chooser shown';
+});
+
+/* 1b --------------------------------------------------------------- */
+await test('Language: हिंदी | English switches every text, including the message on screen', async () => {
+  const DEV = /[\u0900-\u097F]/;
+  const text = () =>
+    page.evaluate(() => {
+      const panel = document.querySelector('.panel--academy').cloneNode(true);
+      panel.querySelector('.ac-seg--lcd')?.remove(); // the switch itself shows "हिंदी"
+      return { all: panel.innerText, fb: document.querySelector('.ac-guide__fb')?.innerText ?? '', tip: document.querySelector('.ac-guide__tip').innerText };
+    });
+  await AC.call('setMode', 'step');
+  const hi = await text();
+  assert(DEV.test(hi.fb) && DEV.test(hi.tip), 'Hindi texts missing');
+  await page.locator('.ac-seg--lcd button[lang="en"]').click();
+  const en = await text();
+  const leftover = en.all.split('\n').filter((l) => DEV.test(l));
+  assert(leftover.length === 0, `Hindi left in English mode: ${leftover.join(' | ')}`);
+  assert(en.fb.startsWith('Press the green key: G4, finger 1'), `English feedback: ${en.fb}`);
+  assert(en.tip.includes('Put your right thumb (1) on G4'), `English tip: ${en.tip}`);
+  // a wrong key in English
+  await tap(69, 80);
+  const wrong = (await text()).fb;
+  assert(wrong.startsWith('You pressed A4. The right key is G4'), `English hint: ${wrong}`);
+  await page.screenshot({ path: join(outDir, 'academy-english.png') });
+  // back to Hindi: the message already on screen changes too
+  await page.locator('.ac-seg--lcd button[lang="hi"]').click();
+  const back = (await text()).fb;
+  assert(back.startsWith('आपने A4 दबाया'), `Hindi hint: ${back}`);
+  await page.locator('.ac-seg--lcd button[lang="en"]').click();
+  const stored = await page.evaluate(() => JSON.parse(window.localStorage.getItem('pva61.academy-settings')));
+  assert(stored?.data?.lang === 'en', `language not saved: ${JSON.stringify(stored)}`);
+  await AC.call('setMode', 'watch');
+  return 'all panel text English, wrong-key hint and tips translated, choice saved';
 });
 
 /* 2 ---------------------------------------------------------------- */
@@ -300,7 +345,8 @@ await test('Step-by-Step: green key with finger and name, blue upcoming, advance
   await tap(71, 80);
   s = await AC.state();
   assert(s.index === 2 && s.live.wrong === 1 && s.marks[2] === 'bad', 'wrong key not detected');
-  assert(s.feedback.tone === 'bad' && s.feedback.text.includes('A4'), `feedback: ${s.feedback.text}`);
+  const fb = await page.locator('.ac-guide__fb').innerText();
+  assert(s.feedback.tone === 'bad' && fb.includes('B4') && fb.includes('A4'), `feedback: ${fb}`);
   assert((await AC.keyClasses(71)).includes('hl-wrong'), 'wrong key not red');
   // two keys at once (A4 together with B4): the right one counts, the other is not held against the player
   await page.evaluate(() => {
@@ -428,7 +474,8 @@ await test('MIDI keyboard unplugged during practice: lesson pauses, nothing hang
   await page.evaluate(() => window.__pva.midi.events.emit('disconnected', { id: 'x', name: 'Test Keys' }));
   const s = await AC.state();
   assert(s.status === 'paused', `status ${s.status}`);
-  assert(s.feedback.tone === 'warn' && s.feedback.text.includes('Test Keys'), 'no message about the device');
+  const fb = await page.locator('.ac-guide__fb').innerText();
+  assert(s.feedback.tone === 'warn' && fb.includes('Test Keys'), `no message about the device: ${fb}`);
   assert((await page.evaluate(() => window.__pva.controller.heldKeys())).length === 0, 'MIDI key left hanging');
   await silence();
   return 'paused with a message';
@@ -447,13 +494,14 @@ await test('Practice results are stored locally and survive a reload', async () 
   await page.waitForFunction(() => window.__pva && !window.__pva.store.get().booting, null, { timeout: 30000 });
   const after = await page.evaluate(() => window.__pva.academy.store.get().progress);
   assert(after.sessions.length === 4 && after.lessons['happy-birthday'].watched, 'progress lost on reload');
+  assert((await AC.state()).lang === 'en', 'language choice lost on reload');
   // damaged storage must not break the Academy
   await page.evaluate(() => window.localStorage.setItem('pva61.academy', '{"v":1,"data":{"sessions":"oops","lessons":[]}}'));
   await page.reload();
   await page.waitForFunction(() => window.__pva && !window.__pva.store.get().booting, null, { timeout: 30000 });
   const clean = await page.evaluate(() => window.__pva.academy.store.get().progress.sessions.length);
   assert(clean === 0, 'damaged storage not ignored');
-  return `4 sessions, best step ${lesson.best.step}%, survives reload and damaged data`;
+  return `4 sessions, best step ${lesson.best.step}%, language kept, survives reload and damaged data`;
 });
 
 /* 11 --------------------------------------------------------------- */
@@ -461,6 +509,8 @@ await test('Leaving the Academy gives the instrument back unchanged', async () =
   await page.evaluate(() => window.__pva.act.setMetronome(true));
   await page.getByRole('button', { name: 'Open the Piano Academy' }).dispatchEvent('pointerdown', { button: 0, pointerType: 'mouse' });
   await page.waitForSelector('.panel--academy');
+  assert((await page.locator('.ac-langpick').count()) === 0, 'language asked again although it was chosen');
+  await AC.call('setLang', 'hi');
   await AC.call('setMode', 'step');
   await page.screenshot({ path: join(outDir, 'academy-step.png') });
   await page.getByRole('button', { name: 'Back to the instrument' }).dispatchEvent('pointerdown', { button: 0, pointerType: 'mouse' });

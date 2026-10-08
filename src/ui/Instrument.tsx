@@ -18,6 +18,7 @@ export function Instrument() {
 
   const { controller, academy } = services();
   const academyOpen = useStore(academy.store, (s) => s.open);
+  const academyLang = useStore(academy.store, (s) => s.lang);
 
   return (
     <div className={`chassis${power ? '' : ' chassis--off'}`}>
@@ -60,7 +61,7 @@ export function Instrument() {
               disabled={!power}
               onPress={() => (academyOpen ? closeAcademy() : openAcademy())}
             />
-            <span className="academy-switch__hint">सीखें</span>
+            <span className="academy-switch__hint">{academyLang === 'en' ? 'Learn' : academyLang === 'hi' ? 'सीखें' : 'सीखें · Learn'}</span>
           </div>
           <div className="speaker__grille" aria-hidden="true" />
         </div>

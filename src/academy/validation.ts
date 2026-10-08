@@ -4,6 +4,7 @@
  * audio clocks or the UI and are unit-tested directly.
  */
 import { isBlackKey, noteName } from '../music/notes';
+import type { Lang } from './text';
 import type { TimedNote } from './song';
 import { TICKS_PER_BEAT } from './song';
 
@@ -30,24 +31,35 @@ function whiteSteps(a: number, b: number): number {
   return n;
 }
 
-/** Supportive explanation of a wrong key, in simple Hindi. */
-export function wrongKeyHint(expected: number, pressed: number): string {
+/** Supportive explanation of a wrong key, in simple Hindi or English. */
+export function wrongKeyHint(expected: number, pressed: number, lang: Lang = 'hi'): string {
   const d = expected - pressed;
-  const dir = d > 0 ? 'दाईं ओर (ऊपर)' : 'बाईं ओर (नीचे)';
   const n = Math.abs(d);
-  const you = `आपने ${noteName(pressed)} दबाया।`;
-  if (n % 12 === 0) {
-    return `${you} नाम सही है, पर octave अलग है — ${noteName(expected)} ${n / 12} octave ${dir} है।`;
+  const exp = noteName(expected);
+  const got = noteName(pressed);
+  const up = d > 0;
+  if (lang === 'en') {
+    const dir = up ? 'to the right (higher)' : 'to the left (lower)';
+    const you = `You pressed ${got}.`;
+    if (n % 12 === 0) return `${you} Right name, but a different octave — ${exp} is ${n / 12} octave${n > 12 ? 's' : ''} ${dir}.`;
+    if (isBlackKey(pressed) && !isBlackKey(expected)) return `${you} That is a black key. ${exp} is the white key next to it, ${dir}.`;
+    if (!isBlackKey(pressed) && !isBlackKey(expected)) {
+      const w = whiteSteps(expected, pressed);
+      const how = w === 1 ? 'the very next white key' : `${w} white keys`;
+      return `${you} The right key is ${exp} — ${how} ${dir}. Look for the green key.`;
+    }
+    return `${you} The right key is ${exp} — ${n} keys ${dir} (counting black keys). Look for the green key.`;
   }
-  if (isBlackKey(pressed) && !isBlackKey(expected)) {
-    return `${you} यह काली (black) key है — इस गाने में सिर्फ़ सफ़ेद keys हैं। ${noteName(expected)} पास वाली सफ़ेद key है, ${dir}।`;
-  }
+  const dir = up ? 'दाईं ओर (ऊपर)' : 'बाईं ओर (नीचे)';
+  const you = `आपने ${got} दबाया।`;
+  if (n % 12 === 0) return `${you} नाम सही है, पर octave अलग है — ${exp} ${n / 12} octave ${dir} है।`;
+  if (isBlackKey(pressed) && !isBlackKey(expected)) return `${you} यह काली (black) key है। ${exp} इसके पास वाली सफ़ेद key है, ${dir}।`;
   if (!isBlackKey(pressed) && !isBlackKey(expected)) {
     const w = whiteSteps(expected, pressed);
     const how = w === 1 ? 'बिल्कुल बगल वाली सफ़ेद key' : `${w} सफ़ेद keys`;
-    return `${you} सही key ${noteName(expected)} है — ${how} ${dir}। हरी key देखें।`;
+    return `${you} सही key ${exp} है — ${how} ${dir}। हरी key देखें।`;
   }
-  return `${you} सही key ${noteName(expected)} है — ${n} keys ${dir} (काली keys भी गिनें)। हरी key देखें।`;
+  return `${you} सही key ${exp} है — ${n} keys ${dir} (काली keys भी गिनें)। हरी key देखें।`;
 }
 
 /* ------------------------------------------------------------------ */

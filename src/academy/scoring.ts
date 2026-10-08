@@ -1,6 +1,6 @@
 /**
  * Turning a finished practice run into a result: accuracy, counts, the
- * notes that need work, and a short supportive comment in Hindi. Pure.
+ * notes that need work, and which supportive comment fits. Pure.
  */
 import type { CompiledSong } from './song';
 import { TICKS_PER_BEAT } from './song';
@@ -39,23 +39,22 @@ export interface PracticeResult {
   /** Estimated tempo of an independent performance. */
   playedBpm?: number | null;
   issues: NoteIssue[];
-  /** Short comment in Hindi. */
-  comment: string;
+  /** Short comment, shown in the chosen language (see i18n `comment_*`). */
+  commentKey: CommentKey;
 }
+
+export type CommentKey = 'comment_excellent' | 'comment_timing' | 'comment_good' | 'comment_half' | 'comment_start';
 
 /** Accuracy needed for a mode to count as passed. */
 export const PASS_ACCURACY: Record<Exclude<PracticeMode, 'watch'>, number> = { step: 70, guided: 75, perform: 80 };
 
 const pct = (x: number): number => Math.round(Math.max(0, Math.min(1, x)) * 100);
 
-function comment(accuracy: number, timing: number | null, mode: PracticeResult['mode']): string {
-  if (accuracy >= 95 && (timing === null || timing >= 80)) return 'शानदार! लगभग हर note सही था। अगला mode आज़माएँ।';
-  if (accuracy >= PASS_ACCURACY[mode]) {
-    if (timing !== null && timing < 60) return 'Notes अच्छे थे। अब गिनती पर ध्यान दें — metronome के साथ धीरे बजाएँ।';
-    return 'बहुत अच्छा! ज़्यादातर notes सही थे। लाल निशान वाले notes एक बार और देख लें।';
-  }
-  if (accuracy >= 50) return 'अच्छी कोशिश! आधे से ज़्यादा सही। मुश्किल phrase को "Loop" करके दो-तीन बार अभ्यास करें।';
-  return 'कोई बात नहीं — शुरुआत ऐसे ही होती है। Step-by-Step mode में एक-एक note धीरे से सीखें।';
+export function comment(accuracy: number, timing: number | null, mode: PracticeResult['mode']): CommentKey {
+  if (accuracy >= 95 && (timing === null || timing >= 80)) return 'comment_excellent';
+  if (accuracy >= PASS_ACCURACY[mode]) return timing !== null && timing < 60 ? 'comment_timing' : 'comment_good';
+  if (accuracy >= 50) return 'comment_half';
+  return 'comment_start';
 }
 
 interface Common {
@@ -92,7 +91,7 @@ export function stepResult(c: Common & { wrongPerNote: number[]; from: number; t
     accuracy,
     timing: null,
     issues,
-    comment: comment(accuracy, null, 'step'),
+    commentKey: comment(accuracy, null, 'step'),
   };
 }
 
@@ -136,7 +135,7 @@ export function guidedResult(c: Common & { results: GuidedNoteResult[]; extra: n
     accuracy,
     timing,
     issues,
-    comment: comment(accuracy, timing, 'guided'),
+    commentKey: comment(accuracy, timing, 'guided'),
   };
 }
 
@@ -178,7 +177,7 @@ export function performResult(c: Common & { played: PlayedNote[]; from: number; 
     timing,
     playedBpm: rhythm.bpm,
     issues,
-    comment: comment(accuracy, timing, 'perform'),
+    commentKey: comment(accuracy, timing, 'perform'),
   };
 }
 

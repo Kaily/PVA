@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HAPPY_BIRTHDAY } from '../../src/academy/content';
+import { LANGS, MESSAGE_IDS, say, UI } from '../../src/academy/i18n';
 import {
   addPracticeTime,
   emptyProgress,
@@ -78,12 +79,16 @@ describe('song model', () => {
   });
 
   it('rejects broken song data', () => {
-    const base: SongDef = { ...song.def, phrases: [{ title: 'x', lyric: '', tip: '', notes: [{ note: 'C4', beats: 1, finger: 1 }] }] };
+    const base: SongDef = { ...song.def, phrases: [{ title: 'x', lyric: '', tip: { hi: 'x', en: 'x' }, notes: [{ note: 'C4', beats: 1, finger: 1 }] }] };
     expect(() => compileSong(base)).not.toThrow();
     expect(() => compileSong({ ...base, phrases: [{ ...base.phrases[0], notes: [{ note: 'X9', beats: 1, finger: 1 }] }] })).toThrow();
     expect(() => compileSong({ ...base, phrases: [{ ...base.phrases[0], notes: [{ note: 'C4', beats: 1, finger: 6 }] }] })).toThrow();
     expect(() => compileSong({ ...base, phrases: [{ ...base.phrases[0], notes: [{ note: 'C4', beats: 0.3, finger: 1 }] }] })).toThrow();
     expect(() => compileSong({ ...base, pickupBeats: 3 })).toThrow();
+    // every teaching text must exist in both languages
+    expect(() => compileSong({ ...base, intro: { hi: 'x', en: '' } })).toThrow();
+    expect(() => compileSong({ ...base, phrases: [{ ...base.phrases[0], tip: { hi: '', en: 'x' } }] })).toThrow();
+    expect(() => compileSong({ ...base, phrases: [{ ...base.phrases[0], notes: [{ note: 'C4', beats: 1, finger: 1, shift: { hi: 'x' } as never }] }] })).toThrow();
   });
 });
 
@@ -97,6 +102,9 @@ describe('step validation', () => {
     expect(wrongKeyHint(67, 69)).toContain('A4');
     expect(wrongKeyHint(67, 69)).toContain('बाईं');
     expect(wrongKeyHint(67, 55)).toContain('octave');
+    expect(wrongKeyHint(67, 69, 'en')).toBe('You pressed A4. The right key is G4 — the very next white key to the left (lower). Look for the green key.');
+    expect(wrongKeyHint(67, 68, 'en')).toContain('black key');
+    expect(wrongKeyHint(79, 67, 'en')).toContain('1 octave to the right');
   });
 });
 
@@ -236,5 +244,45 @@ describe('scoring and progress', () => {
     expect(p.sessions).toEqual([]);
     expect(p.lessons.b.passed).toEqual(['step']);
     expect(p.lessons.a).toBeUndefined();
+  });
+});
+
+describe('languages (Hindi | English)', () => {
+  const DEVANAGARI = /[\u0900-\u097F]/;
+  const sample = { note: 'G4', next: 'A4', finger: 2, phrase: 'Phrase 1', lyric: 'Hap-', name: 'USB Keys', expected: 67, pressed: 69, acc: 80, n: 75, dur: { hi: 'एक गिनती', en: 'quarter' }, shift: { hi: 'हाथ ऊपर', en: 'Hand up' }, label: 'x', en: 'quarter', beats: '1', plural: '', sec: '1.00' };
+
+  it('every panel label exists in both languages, and the English ones are English', () => {
+    for (const [key, text] of Object.entries(UI)) {
+      expect(text.hi.length, key).toBeGreaterThan(0);
+      expect(text.en.length, key).toBeGreaterThan(0);
+      expect(DEVANAGARI.test(text.en), `${key}: ${text.en}`).toBe(false);
+    }
+  });
+
+  it('every message of the teacher renders in both languages', () => {
+    const all = MESSAGE_IDS;
+    expect(all.length).toBeGreaterThan(35);
+    for (const id of all) {
+      for (const lang of LANGS) {
+        const text = say({ id, p: sample }, lang);
+        expect(text.length, `${id}/${lang}`).toBeGreaterThan(3);
+        expect(text, `${id}/${lang}`).not.toContain('undefined');
+        if (lang === 'en') expect(DEVANAGARI.test(text), `${id}: ${text}`).toBe(false);
+      }
+    }
+    // bilingual parameters follow the language
+    expect(say({ id: 'correctNext', p: sample }, 'en')).toContain('Hand up');
+    expect(say({ id: 'correctNext', p: sample }, 'hi')).toContain('हाथ ऊपर');
+  });
+
+  it('the song teaches in both languages', () => {
+    const d = song.def;
+    for (const lang of LANGS) {
+      expect(d.intro[lang].length).toBeGreaterThan(20);
+      for (const p of song.phrases) expect(p.tip[lang].length).toBeGreaterThan(20);
+      for (const n of song.notes) if (n.shift) expect(n.shift[lang].length).toBeGreaterThan(10);
+    }
+    for (const p of song.phrases) expect(DEVANAGARI.test(p.tip.en)).toBe(false);
+    expect(song.notes.filter((n) => n.shift)).toHaveLength(3);
   });
 });

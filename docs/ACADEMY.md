@@ -9,7 +9,8 @@ working demo)** of the Academy plan. Levels 0–5 are not built yet — on
 purpose: the plan says not to start the full Academy until the demo works,
 and not to add chapters without real teaching content.
 
-User instructions in simple Hindi: [`ACADEMY-GUIDE-HI.md`](ACADEMY-GUIDE-HI.md).
+User instructions: [`ACADEMY-GUIDE-HI.md`](ACADEMY-GUIDE-HI.md) (simple Hindi) and
+[`ACADEMY-GUIDE-EN.md`](ACADEMY-GUIDE-EN.md) (English).
 
 ## 1. What the existing instrument gave us (Phase 1)
 
@@ -37,7 +38,8 @@ src/academy/
   content/index.ts              loads and validates the songs
   song.ts                       Curriculum data model + compiler to the clock grid (pure)
   validation.ts                 Note Validation Engine + Timing and Rhythm Validation (pure)
-  scoring.ts                    results, accuracy, Hindi comments (pure)
+  scoring.ts                    results, accuracy, which comment fits (pure)
+  text.ts, i18n.ts              हिंदी | English: panel labels and everything the teacher says
   progress.ts                   Progress Tracking (pure functions over the stored data)
   LessonEngine.ts               Lesson Engine + Song Sequencer + Input Adapter + MIDI handling + storage I/O
   KeyHighlighter.ts             Keyboard Highlight Controller (class toggles on the keybed)
@@ -66,7 +68,27 @@ The mapping to the list in the prompt (§9):
 Lesson logic is not in the UI: the panel only reads `academy.store` and calls
 engine methods.
 
-## 3. The song format
+## 3. Languages — हिंदी | English
+
+The first time the Academy opens, the player chooses the teaching language;
+a **हिंदी | EN** switch in the screen header changes it at any time, and the
+choice is stored (`pva61.academy-settings`).
+
+- Song data carries every teaching text in both languages:
+  `{ "hi": "…", "en": "…" }` for the intro, phrase tips and hand shifts.
+  `compileSong()` refuses a song where either language is missing.
+- `i18n.ts` holds the panel labels (`UI`) and every message of the teacher.
+  The Lesson Engine stores a message **id with parameters**, not finished
+  text, and the panel renders it in the current language — so switching the
+  language also changes the message already on screen. Stored results keep
+  a `commentKey` instead of a sentence for the same reason.
+- Note names (G4), finger numbers, lyrics and the instrument's own printed
+  panel legends (Start, Restart, Tempo …) are the same in both languages.
+- Unit tests check that every label and every message exists in both
+  languages and that no Hindi appears in the English texts; a browser test
+  switches the running lesson to English and checks every line on the panel.
+
+## 4. The song format
 
 ```jsonc
 {
@@ -95,7 +117,7 @@ eighth + sixteenth, "you" a half note (dotted half at the end). 25 notes,
 starts with the thumb on G4; the octave leap in phrase 3 and the return in
 phrase 4 are taught as explicit hand shifts.
 
-## 4. Timing
+## 5. Timing
 
 - Playback, count-in and practice clicks run on the instrument's `Clock`
   (audio-clock time, 25 ms worker timer, 120 ms look-ahead). The lesson
@@ -112,7 +134,7 @@ phrase 4 are taught as explicit hand shifts.
   (never past the midpoint to a neighbour, so the short "Hap-py" notes are
   told apart). Within ±0.2 beat is "on time".
 
-## 5. The four modes
+## 6. The four modes
 
 | Mode | Keys | Judged | Stored |
 | --- | --- | --- | --- |
@@ -126,17 +148,18 @@ A mode is **passed** with a whole-song run at ≥ 70 % (Step), 75 % (Guided),
 passes. Single-phrase runs and loop passes are stored too, but do not pass a
 mode.
 
-## 6. Tests
+## 7. Tests
 
 | Command | What |
 | --- | --- |
-| `npm test` | 92 unit tests — 19 new ones for the Academy: note parsing, the exact melody and rhythm of the song, bar layout, invalid data, step / guided / performance validation, scoring, progress, damaged storage |
-| `npm run build && npm run test:academy` | 12 browser checks of the demo (below) |
+| `npm test` | 95 unit tests — 22 for the Academy: note parsing, the exact melody and rhythm of the song, bar layout, invalid data, step / guided / performance validation, scoring, progress, damaged storage, both languages complete |
+| `npm run build && npm run test:academy` | 13 browser checks of the demo (below) |
 | `npm run test:e2e` | the instrument's 49 existing checks, unchanged, still passing |
 
 Academy browser checks (all passing, Chromium):
 
-1. The Academy replaces the panel; the keybed stays; panel metronome paused, lesson tempo 60.
+1. The Academy replaces the panel; the keybed stays; panel metronome paused, lesson tempo 60; the language chooser appears on the first visit.
+1b. Switching to English changes every line on the panel (tips, feedback, wrong-key hint); switching back changes the message on screen too; the choice is saved.
 2. Watch: all 25 notes with the right pitch; onsets exact to < 2 ms; "Hap-" exactly three times "py"; keys light 20 ms (median) after the note is heard.
 3. Pause stops the notes (including scheduled ones), Resume continues at the paused note, slowing to 40 BPM mid-song changes the spacing exactly, Restart begins at G4.
 4. Step: green G4 with "1" and "G4" on the key, blue A4; repeated G4 needs a new press; wrong key → red key + Hindi explanation; two keys at once not counted as a mistake.
@@ -145,22 +168,22 @@ Academy browser checks (all passing, Chromium):
 7. Guided: a wrong note and a skipped note are reported as such.
 8. Independent: no highlights, no upcoming notes; played at 90 BPM → 6/6, 90 BPM detected, rhythm 100 %.
 9. MIDI device unplugged mid-lesson: lesson pauses with a message, no hanging notes.
-10. Results stored, survive a reload, damaged storage is ignored.
+10. Results stored, survive a reload (language too), damaged storage is ignored.
 11. Leaving gives the instrument back: tempo 120 and metronome restored, no highlights left, keys play.
 12. No stuck notes, silence, no console errors.
 
-## 7. Not verified — please check
+## 8. Not verified — please check
 
 - **A real USB MIDI keyboard.** MIDI was tested with injected messages
   (including velocity-0 note-offs and an unplug event), not with hardware.
 - **Listening.** Timing is measured, but nobody has *listened* to the lesson
   playback and count-in on your speakers.
-- **Hindi wording** — written to be simple; please correct anything that reads oddly.
+- **Wording** — Hindi written to be simple, English to match; please correct anything that reads oddly.
 - **Firefox / Safari** — the tests ran in Chromium. (MIDI needs Chrome or Edge anyway.)
 - Small windows: the Academy uses the instrument's fixed proportions, so on a
   narrow window the page scrolls sideways like the instrument does.
 
-## 8. Next (Phase 3 of the Academy plan)
+## 9. Next (Phase 3 of the Academy plan)
 
 Level 0 and Level 1 with working lessons, built from the same pieces:
 a chapter = explanation text + one or more exercises; an exercise = a short

@@ -9,6 +9,7 @@
  *
  * Pure — no browser APIs — so it is unit-tested under Node.
  */
+import { isText, type Text } from './text';
 
 export const TICKS_PER_BEAT = 24;
 
@@ -20,31 +21,30 @@ export interface SongNoteDef {
   /** Recommended finger, 1 = thumb … 5 = little finger. */
   finger: number;
   lyric?: string;
-  /** Hand-position change to make before this note (Hindi). */
-  shift?: string;
+  /** Hand-position change to make before this note. */
+  shift?: Text;
 }
 
 export interface PhraseDef {
   title: string;
   lyric: string;
-  /** Teaching tip shown while this phrase is practised (Hindi). */
-  tip: string;
+  /** Teaching tip shown while this phrase is practised. */
+  tip: Text;
   notes: SongNoteDef[];
 }
 
 export interface SongDef {
   id: string;
   title: string;
-  difficulty: string;
-  difficultyHi: string;
+  difficulty: Text;
   keySignature: string;
   hand: 'right' | 'left';
-  practice: string;
+  practice: Text;
   timeSignature: { beats: number; unit: number };
   /** Beats before the first full bar (anacrusis). 0 = the song starts on beat 1. */
   pickupBeats: number;
   tempo: { default: number; min: number; max: number };
-  intro: string;
+  intro: Text;
   phrases: PhraseDef[];
 }
 
@@ -56,7 +56,7 @@ export interface TimedNote {
   beats: number;
   finger: number;
   lyric: string;
-  shift?: string;
+  shift?: Text;
   phrase: number;
   indexInPhrase: number;
   /** Start and length on the clock grid, counted from the start of bar 0 (which contains the pickup). */
@@ -68,7 +68,7 @@ export interface CompiledPhrase {
   index: number;
   title: string;
   lyric: string;
-  tip: string;
+  tip: Text;
   /** Index of the first note and one past the last. */
   first: number;
   end: number;
@@ -114,6 +114,12 @@ export function compileSong(def: SongDef): CompiledSong {
   if (def.pickupBeats < 0 || def.pickupBeats >= beatsPerBar) throw new Error('pickupBeats must be less than one bar');
   if (!(def.tempo.min <= def.tempo.default && def.tempo.default <= def.tempo.max)) throw new Error('tempo.default outside min/max');
   if (def.phrases.length === 0) throw new Error('A song needs at least one phrase');
+  const bilingual = (v: unknown, where: string): void => {
+    if (!isText(v) || !v.hi.trim() || !v.en.trim()) throw new Error(`${where} needs both "hi" and "en" text`);
+  };
+  bilingual(def.difficulty, 'difficulty');
+  bilingual(def.practice, 'practice');
+  bilingual(def.intro, 'intro');
 
   const ticksPerBar = beatsPerBar * TICKS_PER_BEAT;
   const firstTick = beatsToTicks(beatsPerBar - def.pickupBeats) % ticksPerBar;
@@ -123,11 +129,13 @@ export function compileSong(def: SongDef): CompiledSong {
 
   def.phrases.forEach((p, phraseIndex) => {
     if (p.notes.length === 0) throw new Error(`Phrase ${phraseIndex + 1} has no notes`);
+    bilingual(p.tip, `Phrase ${phraseIndex + 1} tip`);
     const first = notes.length;
     const startTick = tick;
     p.notes.forEach((n, i) => {
       if (!(n.beats > 0)) throw new Error(`Phrase ${phraseIndex + 1}, note ${i + 1}: beats must be > 0`);
       if (![1, 2, 3, 4, 5].includes(n.finger)) throw new Error(`Phrase ${phraseIndex + 1}, note ${i + 1}: finger must be 1–5`);
+      if (n.shift !== undefined) bilingual(n.shift, `Phrase ${phraseIndex + 1}, note ${i + 1} shift`);
       const midi = parseNote(n.note);
       const durationTicks = beatsToTicks(n.beats);
       notes.push({
@@ -163,8 +171,8 @@ export function compileSong(def: SongDef): CompiledSong {
 /** Seconds a note lasts at a tempo. */
 export const noteSeconds = (beats: number, bpm: number): number => (beats * 60) / bpm;
 
-/** Plain-language name of a note length (Hindi with the English term). */
-export function durationLabel(beats: number): { hi: string; en: string } {
+/** Plain-language name of a note length: `hi` in Hindi, `en` the English term. */
+export function durationLabel(beats: number): Text {
   const table: [number, string, string][] = [
     [0.25, 'बहुत छोटा', 'sixteenth'],
     [0.5, 'छोटा', 'eighth'],
@@ -179,13 +187,13 @@ export function durationLabel(beats: number): { hi: string; en: string } {
   return hit ? { hi: hit[1], en: hit[2] } : { hi: `${beats} गिनती`, en: `${beats} beats` };
 }
 
-/** Hindi name of a finger number. */
-export const FINGER_NAMES_HI: Record<number, string> = {
-  1: 'अँगूठा',
-  2: 'तर्जनी',
-  3: 'बीच की उँगली',
-  4: 'अनामिका',
-  5: 'छोटी उँगली',
+/** Name of a finger number. */
+export const FINGER_NAMES: Record<number, Text> = {
+  1: { hi: 'अँगूठा', en: 'thumb' },
+  2: { hi: 'तर्जनी', en: 'index finger' },
+  3: { hi: 'बीच की उँगली', en: 'middle finger' },
+  4: { hi: 'अनामिका', en: 'ring finger' },
+  5: { hi: 'छोटी उँगली', en: 'little finger' },
 };
 
 /** Which phrase a note index belongs to. */

@@ -31,14 +31,14 @@ import { onFrame } from '../core/frame';
 import { createStore, type Store } from '../core/store';
 import type { KeyboardController } from '../input/KeyboardController';
 import type { MidiManager } from '../midi/MidiManager';
-import { noteName } from '../music/notes';
 import type { StorageManager } from '../storage/StorageManager';
 import { HAPPY_BIRTHDAY } from './content';
 import { KeyHighlighter, type MarkedKey } from './KeyHighlighter';
 import { addPracticeTime, emptyProgress, markWatched, recordResult, sanitizeProgress, type AcademyProgress } from './progress';
 import { guidedResult, performResult, stepResult, type PracticeMode, type PracticeResult } from './scoring';
+import { isLang, names, type Lang, type MsgId, type MsgParams, type Msg } from './i18n';
 import { durationLabel, TICKS_PER_BEAT, type CompiledSong, type TimedNote } from './song';
-import { GuidedMatcher, MATCH_WINDOW_BEATS, wrongKeyHint, type PlayedNote } from './validation';
+import { GuidedMatcher, MATCH_WINDOW_BEATS, type PlayedNote } from './validation';
 
 export type { PracticeMode } from './scoring';
 export type LessonStatus = 'ready' | 'countin' | 'running' | 'paused' | 'finished';
@@ -48,13 +48,16 @@ export type FeedbackTone = 'info' | 'good' | 'warn' | 'bad' | 'gold';
 
 export interface Feedback {
   tone: FeedbackTone;
-  text: string;
+  /** What to say — rendered in the chosen language by the panel. */
+  msg: Msg;
   /** Changes with every message, so the panel can restart its fade-in. */
   key: number;
 }
 
 export interface AcademyState {
   open: boolean;
+  /** Teaching language; null until the player has chosen one. */
+  lang: Lang | null;
   songId: string;
   mode: PracticeMode;
   status: LessonStatus;
@@ -113,6 +116,7 @@ interface Visual {
 
 const HOLDER = 'academy';
 const STORAGE_KEY = 'academy';
+const SETTINGS_KEY = 'academy-settings';
 const PLAY_VELOCITY = 84;
 const GUIDE_VELOCITY = 40;
 /** Played notes are held for this share of their written length, so repeated notes are heard as two. */
@@ -153,8 +157,11 @@ export class LessonEngine {
   constructor(private readonly deps: AcademyDeps) {
     for (const n of this.song.notes) this.byTick.set(n.startTick, n);
     const progress = sanitizeProgress(deps.storage.load<unknown>(STORAGE_KEY, emptyProgress()));
+    const settings = deps.storage.load<unknown>(SETTINGS_KEY, {});
+    const savedLang = typeof settings === 'object' && settings !== null ? (settings as { lang?: unknown }).lang : undefined;
     this.store = createStore<AcademyState>({
       open: false,
+      lang: isLang(savedLang) ? savedLang : null,
       songId: this.song.def.id,
       mode: 'watch',
       status: 'ready',
@@ -183,7 +190,7 @@ export class LessonEngine {
       if (this.s.status === 'running' || this.s.status === 'countin') {
         if (this.s.mode === 'watch' || this.s.mode === 'guided') this.pause();
       }
-      this.say('warn', `MIDI keyboard "${name}" हट गया। दोबारा लगाएँ, या computer keyboard / mouse से बजाएँ।`);
+      this.say('warn', 'midiGone', { name });
     });
   }
 
@@ -203,8 +210,14 @@ export class LessonEngine {
     return this.song;
   }
 
-  private say(tone: FeedbackTone, text: string): void {
-    this.set({ feedback: { tone, text, key: ++feedbackKey } });
+  private say(tone: FeedbackTone, id: MsgId, p?: MsgParams): void {
+    this.set({ feedback: { tone, msg: { id, p }, key: ++feedbackKey } });
+  }
+
+  /** Choose the teaching language (remembered on this computer). */
+  setLang(lang: Lang): void {
+    this.set({ lang });
+    this.deps.storage.save(SETTINGS_KEY, { lang });
   }
 
   /** Notes [from, to) of the current range. */
@@ -360,18 +373,18 @@ export class LessonEngine {
     const first = this.song.notes[from];
     switch (this.s.mode) {
       case 'watch':
-        this.say('info', 'Play दबाएँ — piano पूरा गाना बजाएगा और हर key हरी होकर दिखेगी। ध्यान से सुनें और देखें।');
+        this.say('info', 'readyWatch');
         break;
       case 'step':
         this.keys.set(this.marked(from), this.upcoming(from + 1, 2, to));
-        this.say('info', `हरी key दबाएँ: ${first.name}, उँगली ${first.finger}। समय की चिंता न करें — सही key पर lesson आगे बढ़ेगा।`);
+        this.say('info', 'readyStep', { note: first.name, finger: first.finger });
         break;
       case 'guided':
         this.keys.set(this.marked(from), this.upcoming(from + 1, 2, to));
-        this.say('info', `Start दबाएँ। पहले एक bar की गिनती (1-2-3) होगी, फिर "1-2" के बाद ${first.name} से शुरू करें।`);
+        this.say('info', 'readyGuided', { note: first.name });
         break;
       case 'perform':
-        this.say('info', `अब कोई मदद नहीं दिखेगी। Start दबाकर ${first.name} से शुरू करें और अपनी रफ़्तार से पूरा गाना बजाएँ।`);
+        this.say('info', 'readyPerform', { note: first.name });
         break;
     }
   }
@@ -405,7 +418,7 @@ export class LessonEngine {
       case 'watch':
         this.run({ kind: 'watch', cursor: first.startTick, loopTo: this.barStart(first.startTick), endTick: this.s.loop ? this.ceilBar(lastEnd) : lastEnd, from, to });
         this.set({ status: 'running' });
-        this.say('info', 'सुनिए… हर note के साथ उसकी key हरी होगी।');
+        this.say('info', 'startWatch');
         break;
       case 'step':
         this.set({ status: 'running' });
@@ -417,13 +430,13 @@ export class LessonEngine {
         const bar = this.barStart(first.startTick);
         this.run({ kind: 'guided', cursor: bar - this.song.ticksPerBar, loopTo: bar, endTick: this.s.loop ? this.ceilBar(lastEnd + tail) : lastEnd + tail, from, to });
         this.set({ status: 'countin' });
-        this.say('info', 'गिनती सुनें: 1 – 2 – 3, 1 – 2 … और बजाएँ!');
+        this.say('info', 'startGuided');
         break;
       }
       case 'perform':
         this.set({ status: 'running' });
         if (this.s.metronome) this.run({ kind: 'clicks', cursor: 0, loopTo: 0, endTick: Number.MAX_SAFE_INTEGER, from, to });
-        this.say('info', `शुरू करें — ${first.name} से। ख़त्म होने पर "Finish" दबाएँ (या आख़िरी note के बाद अपने-आप रुक जाएगा)।`);
+        this.say('info', 'startPerform', { note: first.name });
         break;
     }
   }
@@ -461,9 +474,9 @@ export class LessonEngine {
       for (let i = from; i < to; i++) marks[i] = 'pending';
       this.set({ marks, index: from });
       this.keys.set(this.marked(from), this.upcoming(from + 1, 2, to));
-      this.say('info', `रुका हुआ। Resume पर ${ph.title} फिर से (गिनती के साथ) शुरू होगा।`);
+      this.say('info', 'pausedGuided', { phrase: ph.title });
     } else {
-      this.say('info', 'रुका हुआ। Resume दबाएँ — यहीं से आगे चलेगा।');
+      this.say('info', 'paused');
     }
     this.resumeFrom = r ? { from: r.from, to: r.to } : null;
   }
@@ -486,7 +499,7 @@ export class LessonEngine {
       const bar = this.barStart(at.startTick);
       this.run({ kind: 'guided', cursor: bar - this.song.ticksPerBar, loopTo: this.barStart(this.song.notes[from].startTick), endTick: this.s.loop ? this.ceilBar(lastEnd + tail) : lastEnd + tail, from, to });
       this.set({ status: 'countin' });
-      this.say('info', 'गिनती के बाद फिर से बजाएँ।');
+      this.say('info', 'resumeGuided');
     }
   }
 
@@ -502,7 +515,7 @@ export class LessonEngine {
       phraseDone[ph.index] = false;
       this.set({ index: first, marks, phraseDone, status: this.s.status === 'finished' ? 'running' : this.s.status, result: null });
       this.keys.set(this.marked(first), this.upcoming(first + 1, 2, to));
-      this.say('info', `${ph.title} फिर से — हरी key ${this.song.notes[first].name} से।`);
+      this.say('info', 'repeatPhrase', { phrase: ph.title, note: this.song.notes[first].name });
     } else {
       this.setPhrase(ph.index);
       this.start();
@@ -526,7 +539,7 @@ export class LessonEngine {
     const ph = this.song.phrases[this.song.notes[this.s.index].phrase];
     const last = this.song.notes[ph.end - 1];
     this.run({ kind: 'preview', cursor: ph.startTick, loopTo: ph.startTick, endTick: last.startTick + last.durationTicks, from: ph.first, to: ph.end });
-    this.say('info', `${ph.title} सुनिए…`);
+    this.say('info', 'previewPhrase', { phrase: ph.title });
   }
 
   /** Independent performance: the player says they are done. */
@@ -644,7 +657,7 @@ export class LessonEngine {
           this.deps.clock.release(HOLDER);
           const { to } = this.range();
           this.keys.set(this.marked(this.s.index), this.upcoming(this.s.index + 1, 2, to));
-          this.say('info', `अब आप बजाएँ — हरी key ${this.song.notes[this.s.index].name}।`);
+          this.say('info', 'previewDone', { note: this.song.notes[this.s.index].name });
         }
         return;
       }
@@ -684,7 +697,7 @@ export class LessonEngine {
         const live = { ...this.s.live, missed: this.s.live.missed + missed.length };
         this.set({ marks, live });
         const n = this.song.notes[missed[missed.length - 1]];
-        this.say('warn', `${n.name} ("${n.lyric}") छूट गया — कोई बात नहीं, अगले note पर ध्यान दें।`);
+        this.say('warn', 'missed', { note: n.name, lyric: n.lyric });
       }
       const target = this.firstPending(r.from, r.to);
       if (target !== this.guidedTarget) {
@@ -720,7 +733,7 @@ export class LessonEngine {
         const e = this.matcher.release(key, this.songBeat(this.deps.engine.ctx.currentTime));
         if (e?.kind === 'short') {
           const n = this.song.notes[e.index];
-          this.say('warn', `${n.name} जल्दी छोड़ दिया। यह ${durationLabel(n.beats).hi} का note है — गिनती पूरी होने तक दबाए रखें।`);
+          this.say('warn', 'shortHold', { note: n.name, dur: durationLabel(n.beats) });
         }
       }
       return;
@@ -762,7 +775,7 @@ export class LessonEngine {
       const prev = this.lastCorrect;
       const together = prev !== null && performance.now() - prev.at < CHORD_GRACE_MS * 2 && this.deps.controller.isKeyDown(prev.midi);
       if (this.deps.controller.isKeyDown(note.midi) || together) {
-        this.say('info', 'एक समय में एक ही key दबाएँ।');
+        this.say('info', 'oneKey');
         return;
       }
       // Judged a moment later: if the right key follows almost at once, both were pressed together.
@@ -778,7 +791,7 @@ export class LessonEngine {
         marks[i] = 'bad';
         this.set({ marks, live: { ...this.s.live, wrong: this.s.live.wrong + 1 } });
         this.keys.flash([key], 'wrong');
-        this.say('bad', wrongKeyHint(note.midi, key));
+        this.say('bad', 'wrongKey', { expected: note.midi, pressed: key });
       };
       this.pendingWrong = { token, at: performance.now(), commit, timer: window.setTimeout(commit, CHORD_GRACE_MS) };
       return;
@@ -802,17 +815,16 @@ export class LessonEngine {
       phraseDone[ph.index] = true;
       this.set({ marks, phraseDone, live });
       this.keys.flash(this.phraseKeys(ph.index), 'gold');
-      if (next < to) this.say('gold', `${ph.title} पूरा हुआ! अगला phrase: ${this.song.phrases[ph.index + 1].lyric}।`);
+      if (next < to) this.say('gold', 'phraseDoneNext', { phrase: ph.title, lyric: this.song.phrases[ph.index + 1].lyric });
     } else {
       this.set({ marks, live });
       const n2 = this.song.notes[next];
-      const tip = n2.shift ? ` ${n2.shift}` : '';
-      this.say('good', `सही! ${note.name} ✓  अब ${n2.name}, उँगली ${n2.finger}।${tip}`);
+      this.say('good', 'correctNext', { note: note.name, next: n2.name, finger: n2.finger, shift: n2.shift });
     }
     if (next >= to) {
       if (this.s.loop) {
         this.storeResult(this.buildStep(), false);
-        this.say('gold', 'बहुत बढ़िया! फिर से — Loop चालू है।');
+        this.say('gold', 'loopAgain');
         const { from } = this.range();
         this.wrongPerNote = this.song.notes.map(() => 0);
         const fresh = [...this.s.marks];
@@ -833,13 +845,13 @@ export class LessonEngine {
   private guidedPress(key: number): void {
     const r = this.runner;
     if (!r || r.kind !== 'guided' || !this.matcher || !this.lastTick) {
-      if (this.s.status !== 'finished') this.say('info', 'पहले Start दबाएँ — गिनती के बाद बजाना है।');
+      if (this.s.status !== 'finished') this.say('info', 'pressStartFirst');
       return;
     }
     const beat = this.songBeat(this.deps.engine.ctx.currentTime);
     const firstBeat = this.song.notes[r.from].startTick / TICKS_PER_BEAT;
     if (beat < firstBeat - MATCH_WINDOW_BEATS) {
-      this.say('info', 'अभी गिनती चल रही है… "1-2" के बाद बजाएँ।');
+      this.say('info', 'countingIn');
       return;
     }
     const e = this.matcher.press(key, beat);
@@ -856,25 +868,25 @@ export class LessonEngine {
         phraseDone[ph.index] = true;
         this.set({ marks, live, phraseDone });
         this.keys.flash(this.phraseKeys(ph.index), 'gold');
-        this.say('gold', `${ph.title} पूरा — हर note सही!`);
+        this.say('gold', 'phraseClean', { phrase: ph.title });
         return;
       }
       this.set({ marks, live });
-      if (e.verdict === 'on-time') this.say('good', `सही! ${n.name} — समय पर ✓`);
-      else this.say('warn', `${n.name} सही key — पर थोड़ा ${e.verdict === 'early' ? 'जल्दी' : 'देर से'}। गिनती के साथ बजाएँ।`);
+      if (e.verdict === 'on-time') this.say('good', 'hitOnTime', { note: n.name });
+      else this.say('warn', e.verdict === 'early' ? 'hitEarly' : 'hitLate', { note: n.name });
     } else if (e.kind === 'wrong') {
       live.wrong++;
       const marks = [...this.s.marks];
       marks[e.index] = 'bad';
       this.set({ marks, live });
       this.keys.flash([key], 'wrong');
-      this.say('bad', `गलत key: ${noteName(key)} — चाहिए ${noteName(e.expected)} (हरी key)।`);
+      this.say('bad', 'guidedWrong', names(key, e.expected));
     } else if (e.kind === 'extra') {
       this.extra++;
       live.wrong++;
       this.set({ live });
       this.keys.flash([key], 'wrong');
-      this.say('warn', 'अभी कोई note नहीं था — हरी key के समय का इंतज़ार करें।');
+      this.say('warn', 'extra');
     }
   }
 
@@ -938,7 +950,7 @@ export class LessonEngine {
     if (mode === 'watch') {
       if (label === 'full') this.saveProgress(markWatched(this.s.progress, this.song.def.id, new Date()));
       this.keys.set(null, []);
-      this.say('gold', 'पूरा गाना सुन लिया! अब "Step-by-Step" mode में ख़ुद बजाकर देखें।');
+      this.say('gold', 'watchDone');
       return;
     }
     if (!result) return;
@@ -960,9 +972,9 @@ export class LessonEngine {
     this.saveProgress(recordResult(this.s.progress, result));
     if (show) {
       this.set({ result });
-      this.say(result.accuracy >= 75 ? 'gold' : result.accuracy >= 50 ? 'good' : 'info', result.comment);
+      this.say(result.accuracy >= 75 ? 'gold' : result.accuracy >= 50 ? 'good' : 'info', result.commentKey);
     } else {
-      this.say('good', `पिछला दौर: ${result.accuracy}% सही।`);
+      this.say('good', 'lastPass', { acc: result.accuracy });
     }
   }
 

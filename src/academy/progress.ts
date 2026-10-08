@@ -49,7 +49,7 @@ export function sanitizeProgress(raw: unknown): AcademyProgress {
   if (Array.isArray(raw.sessions)) {
     p.sessions = raw.sessions
       .filter((s): s is PracticeResult => isObj(s) && typeof s.lessonId === 'string' && typeof s.accuracy === 'number' && typeof s.mode === 'string' && typeof s.at === 'string')
-      .map((s) => ({ ...s, issues: Array.isArray(s.issues) ? s.issues : [] }))
+      .map((s) => ({ ...s, issues: Array.isArray(s.issues) ? s.issues : [], commentKey: typeof s.commentKey === 'string' ? s.commentKey : 'comment_good' }))
       .slice(-MAX_SESSIONS);
   }
   if (isObj(raw.lessons)) {

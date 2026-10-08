@@ -1,5 +1,7 @@
 # Piano Academy — इस्तेमाल का तरीका (सरल हिंदी)
 
+(English: [`ACADEMY-GUIDE-EN.md`](ACADEMY-GUIDE-EN.md))
+
 यह PVA-61 के अंदर आपका अपना piano teacher है। अभी इसमें एक पूरा lesson है:
 **Happy Birthday to You** (बिल्कुल शुरुआत, C Major, सिर्फ़ दाहिना हाथ)।
 
@@ -10,7 +12,10 @@
 2. Piano पर एक बार क्लिक करें — browser आवाज़ तभी चालू करता है।
 3. दाईं ओर speaker के ऊपर **ACADEMY** (टोपी वाला) बटन दबाएँ।
    Control panel की जगह Academy खुल जाएगी; नीचे वही piano रहेगा।
-4. वापस जाने के लिए **"Instrument पर लौटें"** दबाएँ (या ACADEMY बटन दोबारा)।
+4. **पहली बार भाषा चुनें: हिंदी या English।** Lesson की सारी बातें — निर्देश, सुझाव,
+   feedback और नतीजे — इसी भाषा में होंगी। Lesson screen के ऊपर दाईं ओर **हिंदी | EN**
+   से कभी भी बदल सकते हैं; आपकी पसंद इसी computer पर याद रहती है।
+5. वापस जाने के लिए **"Instrument पर लौटें"** दबाएँ (या ACADEMY बटन दोबारा)।
    Tempo और metronome वैसे ही लौट आते हैं जैसे पहले थे।
 
 अगर screen पर पीली पट्टी दिखे (जैसे "Transpose 0 नहीं है"), तो **"ठीक करें"** दबाएँ —

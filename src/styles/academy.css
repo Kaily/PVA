@@ -1204,3 +1204,100 @@ kbd {
     animation: none;
   }
 }
+
+/* ---- language ---------------------------------------------------------- */
+
+.panel--academy {
+  position: relative;
+}
+
+/* first visit: choose the teaching language */
+.ac-langpick {
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: rgba(12, 13, 14, 0.82);
+  backdrop-filter: blur(0.15rem);
+}
+
+.ac-langpick__card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  width: min(46rem, 90%);
+  padding: 1.6rem 1.8rem;
+  border-radius: 0.6rem;
+  font-family: var(--font-lcd);
+  color: var(--lcd-ink);
+  background: linear-gradient(180deg, var(--lcd-bg-2) 0%, var(--lcd-bg-1) 100%);
+  box-shadow:
+    inset 0 0 0 0.08rem var(--lcd-line),
+    0 1rem 2.5rem rgba(0, 0, 0, 0.6);
+}
+
+.ac-langpick__card h2 {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.ac-langpick__card h2 span {
+  color: var(--lcd-dim);
+}
+
+.ac-langpick__options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.ac-langpick__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 1rem 1.1rem;
+  border: 0;
+  border-radius: 0.45rem;
+  font-family: var(--font-lcd);
+  text-align: left;
+  color: var(--lcd-ink);
+  background: rgba(160, 215, 225, 0.08);
+  box-shadow: inset 0 0 0 0.08rem var(--lcd-line);
+  cursor: pointer;
+}
+
+.ac-langpick__btn:hover,
+.ac-langpick__btn:focus-visible {
+  background: rgba(63, 224, 143, 0.14);
+  box-shadow: inset 0 0 0 0.1rem var(--ac-green);
+}
+
+.ac-langpick__btn b {
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--ac-green);
+}
+
+.ac-langpick__btn small {
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: var(--lcd-dim);
+}
+
+/* the switch in the screen header */
+.ac-seg--lcd {
+  flex: none;
+  padding: 0.1rem;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.ac-seg--lcd .ac-seg__btn {
+  flex: none;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.72rem;
+}

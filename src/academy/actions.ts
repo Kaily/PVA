@@ -7,6 +7,7 @@ import { KEYBOARD_ROWS } from '../data/keymap';
 import { services } from '../services';
 import * as act from '../state/actions';
 import type { AppState } from '../state/appState';
+import type { UiKey } from './i18n';
 
 let restoreMetronome = false;
 
@@ -31,15 +32,15 @@ export function closeAcademy(): void {
   restoreMetronome = false;
 }
 
-/** Settings of the instrument that would make a lesson sound or behave differently from what it teaches. */
-export function lessonWarnings(s: AppState): string[] {
-  const w: string[] = [];
+/** Settings of the instrument that would make a lesson sound or behave differently from what it teaches (label keys). */
+export function lessonWarnings(s: AppState): UiKey[] {
+  const w: UiKey[] = [];
   const shift = s.transpose !== 0 || s.octave !== 0 || s.parts.upper1.octave !== 0 || s.parts.upper1.transpose !== 0;
-  if (shift) w.push('Transpose / Octave 0 नहीं है — keys की आवाज़ असली note से अलग सुनाई देगी।');
-  if (s.arp.on) w.push('Arpeggio चालू है — keys अकेले note नहीं बजाएँगी।');
-  if (s.harmonyOn) w.push('Harmony चालू है — हर note के साथ और notes भी बजेंगे।');
-  if (s.layerOn) w.push('Layer चालू है — दो आवाज़ें एक साथ बजेंगी।');
-  if (s.splitOn && s.splitPoint > 55) w.push('Split चालू है — lesson की कुछ keys दूसरी आवाज़ बजा सकती हैं।');
+  if (shift) w.push('warnShift');
+  if (s.arp.on) w.push('warnArp');
+  if (s.harmonyOn) w.push('warnHarmony');
+  if (s.layerOn) w.push('warnLayer');
+  if (s.splitOn && s.splitPoint > 55) w.push('warnSplit');
   return w;
 }
 
